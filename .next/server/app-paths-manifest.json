@@ -1,10 +1,8 @@
 {
-  "/(protected)/admin/asociados/page": "app/(protected)/admin/asociados/page.js",
-  "/(protected)/admin/perfil/page": "app/(protected)/admin/perfil/page.js",
-  "/(protected)/admin/usuarios/page": "app/(protected)/admin/usuarios/page.js",
   "/(protected)/usuario/bandeja/page": "app/(protected)/usuario/bandeja/page.js",
-  "/api/invite-user/route": "app/api/invite-user/route.js",
+  "/(protected)/usuario/page": "app/(protected)/usuario/page.js",
   "/forgot-password/page": "app/forgot-password/page.js",
   "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
   "/set-password/page": "app/set-password/page.js"
 }

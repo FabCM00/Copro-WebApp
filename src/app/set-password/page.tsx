@@ -115,7 +115,7 @@ export default function SetPasswordPage() {
     if (done) {
         return (
             <AuthIllustrationPage
-                imageSrc="/set-password-exitoso.png"
+                imageSrc="/forgot-password-error.png"
                 imageAlt="Contraseña creada"
                 title="¡Contraseña creada!"
                 body="Tu acceso está listo. Serás redirigido al inicio de sesión en un momento."
@@ -131,7 +131,7 @@ export default function SetPasswordPage() {
     if (!hasSession) {
         return (
             <AuthIllustrationPage
-                imageSrc="/set-password-error.png"
+                imageSrc="/forgot-password-exitoso.png"
                 imageAlt="Enlace inválido"
                 title="Invitación inválida"
                 body="Parece que este enlace no es válido o ha expirado. Solicita una nueva invitación para continuar."

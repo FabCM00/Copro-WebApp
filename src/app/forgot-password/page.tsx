@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
         if (!email) { setErrorMsg("El correo es obligatorio."); return; }
 
         setLoading(true);
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${baseUrl.replace(/\/$/, "")}/set-password`,
         });
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
                 body="Revisa tu bandeja de entrada y sigue el enlace para restablecer tu contraseña."
             >
                 <Button onClick={() => router.replace("/login")} variant="outline"
-                    className="h-12 w-full rounded-[10px] border-[#F29A2E] text-[#F29A2E] text-base font-semibold hover:bg-[#F29A2E]/8 gap-2">
+                    className="flex h-12 w-full items-center justify-center rounded-[10px] bg-[#F29A2E] text-base font-semibold text-[#0D0D0D] shadow-sm transition hover:bg-[#F28A2E]2">
                     <ArrowLeft className="h-4 w-4" />
                     Volver al login
                 </Button>
@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
                     Intentar de nuevo
                 </Button>
                 <Button onClick={() => router.replace("/login")} variant="outline"
-                    className="h-12 w-full rounded-[10px] border-[#F29A2E] text-[#F29A2E] text-base font-semibold hover:bg-[#F29A2E]/8 gap-2">
+                    className="flex h-12 w-full items-center justify-center rounded-[10px] bg-[#F29A2E] text-base font-semibold text-[#0D0D0D] shadow-sm transition hover:bg-[#F28A2E]">
                     <ArrowLeft className="h-4 w-4" />
                     Volver al login
                 </Button>

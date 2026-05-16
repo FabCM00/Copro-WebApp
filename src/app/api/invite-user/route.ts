@@ -103,8 +103,8 @@ export async function POST(req: NextRequest) {
             : undefined;
 
     const origin =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        req.headers.get("origin") ||
+        process.env.NEXT_PUBLIC_APP_URL ??
+        req.headers.get("origin") ??
         "http://localhost:3000";
 
     const result = await inviteUser({ email, username, appOrigin: origin });

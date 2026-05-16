@@ -21,7 +21,15 @@ export function AuthIllustrationPage({
     children,
 }: AuthIllustrationPageProps) {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-white p-6">
+        <div className="relative flex min-h-screen flex-col bg-white">
+            <header className="flex w-full items-center px-6 py-4">
+                <img
+                    src="/Imagen1.png"
+                    alt="Want N' Get"
+                    className="h-8 w-auto object-contain sm:h-9"
+                />
+            </header>
+            <div className="flex flex-1 items-center justify-center p-6">
             <div className="flex w-full max-w-[420px] flex-col items-center gap-6">
                 <img
                     src={imageSrc}
@@ -36,6 +44,7 @@ export function AuthIllustrationPage({
                 {children && (
                     <div className="flex w-full flex-col gap-3">{children}</div>
                 )}
+            </div>
             </div>
         </div>
     );
