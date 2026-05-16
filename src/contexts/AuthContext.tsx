@@ -68,6 +68,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const promise = (async () => {
             const r = await profiles.getProfile(userId);
             if (!r.ok) {
+                if (r.error.code === "not_found") {
+                    // Perfil no existe — cerrar sesión en silencio para mostrar
+                    // un login limpio sin exponer el error crudo al usuario.
+                    supabase.auth.signOut({ scope: "local" }).catch(() => {});
+                    return null;
+                }
                 if (!profileRef.current) {
                     setError(r.error.message);
                     setProfileSynced(null);

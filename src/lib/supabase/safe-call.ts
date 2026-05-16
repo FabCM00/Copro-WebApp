@@ -71,7 +71,7 @@ function classifySupabaseError(err: any): SafeError {
     const status: number | undefined = err?.status;
     const code: string | undefined = err?.code;
 
-    if (code === "PGRST116" || status === 404) return { code: "not_found", message, cause: err };
+    if (code === "PGRST116" || status === 404 || /cannot coerce/i.test(message)) return { code: "not_found", message, cause: err };
     if (status === 401 || status === 403 || /invalid.*credentials/i.test(message) || /jwt/i.test(message) || /not authenticated/i.test(message)) {
         return { code: "auth", message, cause: err };
     }

@@ -101,7 +101,7 @@ export default function SetPasswordPage() {
         if (!r.ok) { setError(r.error.message); setLoading(false); return; }
 
         if (userIdRef.current) {
-            await profiles.updateProfile(userIdRef.current, { estado: true });
+            await profiles.updateProfileWithToken(userIdRef.current, { estado: true }, token);
         }
 
         setLoading(false);
