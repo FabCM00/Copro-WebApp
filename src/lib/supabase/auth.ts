@@ -1,5 +1,5 @@
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "./client";
+import { supabase, supabaseIsolated, SUPABASE_URL, SUPABASE_ANON_KEY } from "./client";
 import { safeCall } from "./safe-call";
 import type { SafeResult } from "./types";
 
@@ -143,5 +143,53 @@ export async function updatePassword(
             return { data: true as const, error: null };
         },
         { label: "auth.updatePassword" },
+    );
+}
+
+// ─── Variantes aisladas por pestaña (sessionStorage) ────────────────────────
+// Úsalas en el flujo de invitación (set-password) para que las operaciones
+// de auth no afecten las pestañas abiertas con otra sesión (ej: el admin).
+
+export async function signOutIsolated(
+    scope: "global" | "local" | "others" = "local",
+): Promise<SafeResult<true>> {
+    return safeCall(
+        async () => {
+            const { error } = await supabaseIsolated.auth.signOut({ scope });
+            if (error) return { data: null, error };
+            return { data: true as const, error: null };
+        },
+        { label: "auth.signOutIsolated", timeoutMs: 8_000 },
+    );
+}
+
+export async function setSessionFromTokensIsolated(
+    access_token: string,
+    refresh_token: string,
+): Promise<SafeResult<Session>> {
+    return safeCall(
+        async () => {
+            const { data, error } = await supabaseIsolated.auth.setSession({
+                access_token,
+                refresh_token,
+            });
+            if (error) return { data: null, error };
+            if (!data.session) {
+                return { data: null, error: { message: "Sesion no establecida." } };
+            }
+            return { data: data.session, error: null };
+        },
+        { label: "auth.setSessionFromTokensIsolated", timeoutMs: 10_000 },
+    );
+}
+
+export async function getSessionIsolated(): Promise<SafeResult<Session | null>> {
+    return safeCall(
+        async () => {
+            const { data, error } = await supabaseIsolated.auth.getSession();
+            if (error) return { data: null, error };
+            return { data: data.session, error: null };
+        },
+        { label: "auth.getSessionIsolated", timeoutMs: 5_000 },
     );
 }

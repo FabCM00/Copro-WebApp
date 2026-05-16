@@ -54,10 +54,12 @@ export default function SetPasswordPage() {
 
             if (access_token && refresh_token) {
                 accessTokenRef.current = access_token;
-                await auth.signOut("local");
+                // signOutIsolated: solo limpia sessionStorage de esta pestaña,
+                // no toca la sesión del admin en otras pestañas (localStorage).
+                await auth.signOutIsolated("local");
                 if (cancelled) return;
 
-                const r = await auth.setSessionFromTokens(access_token, refresh_token);
+                const r = await auth.setSessionFromTokensIsolated(access_token, refresh_token);
                 if (cancelled) return;
 
                 if (!r.ok) { finish("No se pudo verificar la invitación."); return; }
@@ -66,7 +68,8 @@ export default function SetPasswordPage() {
                 return;
             }
 
-            const session = await auth.getSession();
+            // Sin hash: busca sesión previa en sessionStorage de esta pestaña.
+            const session = await auth.getSessionIsolated();
             if (cancelled) return;
 
             if (session.ok && session.data?.user) {

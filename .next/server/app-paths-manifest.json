@@ -1,8 +1,5 @@
 {
-  "/(protected)/usuario/bandeja/page": "app/(protected)/usuario/bandeja/page.js",
-  "/(protected)/usuario/page": "app/(protected)/usuario/page.js",
-  "/forgot-password/page": "app/forgot-password/page.js",
+  "/(protected)/admin/usuarios/page": "app/(protected)/admin/usuarios/page.js",
   "/login/page": "app/login/page.js",
-  "/page": "app/page.js",
-  "/set-password/page": "app/set-password/page.js"
+  "/page": "app/page.js"
 }
