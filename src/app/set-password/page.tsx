@@ -115,7 +115,7 @@ export default function SetPasswordPage() {
     if (done) {
         return (
             <AuthIllustrationPage
-                imageSrc="/forgot-password-error.png"
+                imageSrc="/forgot-password-exitoso.png"
                 imageAlt="Contraseña creada"
                 title="¡Contraseña creada!"
                 body="Tu acceso está listo. Serás redirigido al inicio de sesión en un momento."
@@ -131,11 +131,11 @@ export default function SetPasswordPage() {
     if (!hasSession) {
         return (
             <AuthIllustrationPage
-                imageSrc="/forgot-password-exitoso.png"
+                imageSrc="/forgot-password-error.png"
                 imageAlt="Enlace inválido"
                 title="Invitación inválida"
                 body="Parece que este enlace no es válido o ha expirado. Solicita una nueva invitación para continuar."
-            >
+            >   
                 <Button onClick={() => router.replace("/login")} variant="outline"
                     className="h-12 w-full rounded-[10px] border-[#F29A2E] text-[#F29A2E] text-base font-semibold hover:bg-[#F29A2E]/8 gap-2">
                     <ArrowLeft className="h-4 w-4" />
