@@ -1,36 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { inviteUser } from "@/lib/api/invitations";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
-
-// Rate limiter en memoria: IP → { count, resetAt }
-const rateMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_MAX = 5;
-const RATE_WINDOW_MS = 15 * 60 * 1000;
-
-function isRateLimited(ip: string): boolean {
-    const now = Date.now();
-    const entry = rateMap.get(ip);
-    if (!entry || now > entry.resetAt) {
-        rateMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-        return false;
-    }
-    if (entry.count >= RATE_MAX) return true;
-    entry.count++;
-    return false;
-}
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-    // 1. Rate limiting por IP
+    // 1. Rate limiting distribuido por IP (Upstash Redis en prod, Map en dev)
     const ip =
         req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    if (isRateLimited(ip)) {
+
+    const rateResult = await checkRateLimit(ip);
+    if (!rateResult.allowed) {
+        const retryAfterSec = Math.ceil(rateResult.retryAfterMs / 1000);
         return NextResponse.json(
             {
                 ok: false,
                 code: "rate_limited",
                 message: "Demasiados intentos. Espera 15 minutos antes de volver a intentar.",
             },
-            { status: 429 },
+            {
+                status: 429,
+                headers: { "Retry-After": String(retryAfterSec) },
+            },
         );
     }
 

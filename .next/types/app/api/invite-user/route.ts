@@ -1,4 +1,4 @@
-// File: C:\Users\hcard\Desktop\WANT N' GET\Motores\PortalWant-WebApp\src\app\api\invite-user\route.ts
+// File: C:\Users\hcard\Desktop\WANT N' GET\Motores\PortalWant-WebApp - copia\src\app\api\invite-user\route.ts
 import * as entry from '../../../../../src/app/api/invite-user/route.js'
 import type { NextRequest } from 'next/server.js'
 

@@ -1,4 +1,4 @@
-// File: C:\Users\hcard\Desktop\WANT N' GET\Motores\PortalWant-WebApp\src\app\(protected)\admin\page.tsx
+// File: C:\Users\hcard\Desktop\WANT N' GET\Motores\PortalWant-WebApp - copia\src\app\(protected)\admin\page.tsx
 import * as entry from '../../../../../src/app/(protected)/admin/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
