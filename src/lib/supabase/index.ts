@@ -27,35 +27,18 @@ export type {
     SolicitudUI,
     SolicitudEstado,
     ValidacionItem,
-    Valida1ResultRow,
-    MotorProcessResultRow,
-    MotorDataResultRow,
-    IdentityValidationRow,
     ListSolicitudesOptions,
+    // Tipos de filas DB (schema real con JSONB)
+    Valida1Row,
+    Valida1Resp,
+    Valida1Req,
+    MotorDataRow,
+    MotorDataResp,
+    MotorDataAsociado,
+    MotorProcessRow,
+    MotorProcessResp,
+    MotorOferta,
+    MotorProcessing,
+    IdentityRow,
+    IdentityPayload,
 } from "./bandeja";
-
-export interface DatosAsociado {
-    id: number;
-    cedula: string;
-    primer_apellido: string | null;
-    nombre: string | null;
-    ciudad: string | null;
-    estado_civil: string | null;
-    salario: number | null;
-    aportes: number | null;
-    deuda_coopvalili: number | null;
-    edad: number | null;
-    tipo_vivienda: number | null;
-    fecha_ingreso: string | null;
-    fecha_ingreso_empresa: string | null;
-    personas_cargo: number | null;
-    cliente_empresa: string | null;
-    nivel: number | null;
-    cuota_disponible: number | null;
-    nombre_asociado: string | null;
-    antiguedad_coop: number | null;
-    antiguedad_laboral: number | null;
-    usuario_credito: number | null;
-    estado_civil_norm: string | null;
-    updated_at: string;
-}

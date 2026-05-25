@@ -3,181 +3,220 @@ import { safeCall } from "./safe-call";
 import type { SafeResult } from "./types";
 
 /**
- * Capa de datos para la Bandeja de Solicitudes (rol usuario).
+ * Capa de datos para la Bandeja de Solicitudes.
  *
- * Universo de filas: `valida1_results`. Cada radicado pasa primero por la
- * validación inicial, y SOLO si pasa puede llegar a tener un registro en
- * `motor_process_results`. Por eso valida1_results es la fuente de verdad para
- * la lista, y motor_process_results se hace LEFT JOIN — puede faltar.
+ * Universo: `valida1_results` — cada radicado nace aquí.
+ * Las tablas relacionadas se unen por `radicado` (FK real del schema).
  *
- * Tablas relacionadas (todas por `radicado`):
- *   - valida1_results       : universo principal
- *   - motor_process_results : decisión del motor (puede no existir)
- *   - motor_data_results    : payloads de APIs (puede no existir)
- *   - identity_validations  : validación de identidad (radicado_valida1)
+ * Tablas:
+ *   valida1_results      → validación inicial (fuente de verdad)
+ *   motor_data_results   → datos enriquecidos de APIs externas
+ *   motor_process_results → decisión del motor de crédito
+ *   identity_results     → validación de identidad facial/documental
+ *
+ * Todos los datos de negocio viven en request_json / response_json (JSONB).
  */
 
-// ─── Tipos crudos ─────────────────────────────────────────────────────────────
+// ─── Tipos de filas DB (schema real) ──────────────────────────────────────────
 
-export interface Valida1ResultRow {
+export interface Valida1Row {
+    id: number;
     radicado: string;
     cedula: string;
-    valida_activo: number | null;
-    valida_edad: number | null;
-    valida_asociado: number | null;
-    valida_no_retirado: number | null;
-    valida1: number | null;
-    mensaje: string | null;
-    fecha_generacion: string | null;
-    tipo_identificacion: string | null;
-    numero_identificacion: string | null;
-    cliente_empresa: string | null;
-    primer_apellido: string | null;
-    segundo_apellido: string | null;
-    nombre: string | null;
-    fecha_ingreso: string | null;
-    fecha_ingreso_empresa: string | null;
-    telefono: string | null;
-    direccion: string | null;
-    asociado: number | null;
-    activo: number | null;
-    actividad_economica: string | null;
-    codigo_municipal: number | null;
-    email: string | null;
-    genero: number | null;
-    empleado: number | null;
-    tipo_contrato: number | null;
-    nivel_escolar: number | null;
-    estrato: number | null;
-    fecha_nacimiento: string | null;
-    estado_civil: number | null;
-    mujer_cabeza_familia: number | null;
-    sector_economico: number | null;
-    jornada_laboral: number | null;
-    fecha_retiro: string | null;
-    celular: string | null;
-    raw_json: Record<string, any> | null;
+    request_json: Valida1Req | null;
+    response_json: Valida1Resp | null;
     created_at: string;
-    // Campos de gestión (se pueden agregar via migration o directamente si existen)
+    updated_at: string;
+    // Campos de gestión — requieren migration si no existen:
+    // ALTER TABLE valida1_results ADD COLUMN gestionado_at timestamptz;
+    // ALTER TABLE valida1_results ADD COLUMN gestionado_by text;
     gestionado_at?: string | null;
     gestionado_by?: string | null;
 }
 
-export interface MotorProcessResultRow {
+export interface Valida1Req {
+    id: number | string;
+    email?: string;
+    celular?: string;
+    last_name?: string;
+}
+
+export interface Valida1Resp {
+    motor1: number;              // 1 = cumple, 2 = no cumple
+    status: string;
+    mensaje: string;
     radicado: string;
-    cedula: string;
-    status: string | null;
-    perfil: string | null;
-    totales_scor: number | null;
-    usario_credito: number | null;
-    scor_nivel_riesgo: number | null;
-    scor_edad: number | null;
-    scor_pcargo: number | null;
-    scor_vivienda: number | null;
-    scor_ant_coop: number | null;
-    scor_ant_laboral: number | null;
-    scor_ingresos: number | null;
-    ingresos: number | null;
-    egresos: number | null;
-    minimo_vital: number | null;
-    resumen_salarial: number | null;
-    cuota_tdc: number | null;
-    descuentos_ley: number | null;
-    cuota_max_endeudamiento_mensual: number | null;
-    cuota_max_capacidad_mensual: number | null;
-    cuota_max_capacidad: number | null;
-    cuota_periodica_solicitada: number | null;
-    cuota_definitiva: number | null;
-    maximo_deuda_endeudamiento: number | null;
-    maximo_deuda_desprotegido: number | null;
-    valor_final_credito_motor: number | null;
-    monto_definitivo: number | null;
-    endeudamiento_actual: number | null;
-    endeudamiento_proyectado: number | null;
-    maximo_endeudamiento: number | null;
-    cumple_end: number | null;
-    cumple_sol: number | null;
-    cumple_disp: number | null;
-    cumple_des: number | null;
-    cumplimiento_4_criterios: number | null;
-    solvencia: number | null;
-    disponible: number | null;
-    desprotegido: number | null;
-    concepto_definitivo: string | null;
-    viable_cmd: number | null;
-    // Bloques de escenarios
-    cumple_4_criterios_b1: number | null;
-    capacidad_pago_b1: number | null;
-    monto_credito_b1: number | null;
-    cumple_4_criterios_b2: number | null;
-    capacidad_pago_b2: number | null;
-    monto_credito_b2: number | null;
-    cumple_4_criterios_b3: number | null;
-    capacidad_pago_b3: number | null;
-    monto_credito_b3: number | null;
-    raw_json: Record<string, any> | null;
-    cuota_b1 : number | null;
-    cuota_b2 : number | null;
-    cuota_b3 : number | null;
-    created_at: string;
+    valida_id?: number;          // Validación de identidad
+    valida_email?: number;
+    valida_celular?: number;
+    valida_last_name?: number;
+    valida_capacidad?: number;
+    valida_estado_laboral?: number;
+    datos_asociado?: {
+        id?: string | number;
+        email?: string;
+        celular?: string;
+        last_name?: string;
+        nombre_completo?: string;
+        payroll_deduction?: number;
+        sueldo_basico_mensual?: number;
+        codigo_interno_cliente?: number;
+    };
+    detalles_rechazo?: string[];
 }
 
-export interface MotorDataResultRow {
-    radicado_valida1: string | null;
-    cedula: string;
-    status: string | null;
-    garantia: string | null;
-    aportes: number | null;
-    aporte_mensual: number | null;
-    deuda_coopvalili: number | null;
-    deuda_sector: number | null;
-    cuota_recoge_coopvalili: number | null;
-    cuota_recoge_sector: number | null;
-    salario: number | null;
-    tipo_salario: string | null;
-    egresos_volante: number | null;
-    egresos_sector: number | null;
-    score_cifin: number | null;
-    frecuencia_pagos: string | null;
-    aportes_ahorros: number | null;
-    linea_credito: string | null;
-    monto_solicitado: number | null;
-    parametro_credito: number | null;
-    instancia_aprobacion: string | null;
-    ahorros_fondo: number | null;
-    fecha_ingreso: string | null;
-    fecha_nacimiento: string | null;
-    edad: number | null;
-    personas_cargo: number | null;
-    tipo_vivienda: number | null;
-    antiguedad_fondo: number | null;
-    antiguedad_laboral: number | null;
-    tasa_usura: number | null;
-    meta_coopvalili: string | null;
-    meta_transunion: string | null;
-    meta_mensaje: string | null;
-    raw_json: Record<string, any> | null;
-    created_at: string;
-}
-
-export interface IdentityValidationRow {
+export interface MotorDataRow {
     id: number;
-    radicado_valida1: string | null;
+    radicado: string;
     cedula: string;
-    tipo_validacion: string | null;
-    status_document: number | null;
-    status_face: number | null;
-    estado_validacion: number | null;
-    request_json: Record<string, any> | null;
+    request_json: Record<string, unknown> | null;
+    response_json: MotorDataResp | null;
     created_at: string;
+    updated_at: string;
 }
 
-export interface CreditoDecisionRow {
+export interface MotorDataResp {
+    status: string;
     radicado: string;
-    opcion_elegida: string;
-    response: Record<string, any> | null;
-    created_at: string;
+    detallado?: { cedula?: string; tu_score?: number };
+    errores_apis?: Record<string, unknown>;
+    api_responses?: Record<string, unknown>;
+    datos_asociado?: MotorDataAsociado;
+    eficacia_params_usados?: unknown;
 }
+
+export interface MotorDataAsociado {
+    id?: number;
+    banco?: string;
+    email?: string;
+    deudor?: string;
+    aportes?: number;
+    celular?: string;
+    muebles?: number;
+    scoreTU?: number;
+    zonaCode?: string;
+    moraFondo?: number;
+    moraOtros?: number;
+    ocupacion?: string;
+    segSocial?: number;
+    cuotaOtros?: number;
+    saldoOtros?: number;
+    tipoCuenta?: string;
+    zonaNombre?: string;
+    cargoActual?: string;
+    estadoFondo?: number;
+    fechaFondex?: string;
+    otroSalario?: number;
+    salarioBase?: number;
+    seccionCode?: string;
+    cuotaConsumo?: number;
+    moraConsumo6?: number;
+    saldoConsumo?: number;
+    sucursalCode?: string;
+    tipoContrato?: string;
+    cuentaAhorros?: string;
+    cuotaVivienda?: number;
+    fechaEficacia?: string;
+    finalEficacia?: string | null;
+    moraVivienda6?: number;
+    saldoVivienda?: number;
+    seccionNombre?: string;
+    tipoDocumento?: string;
+    valorCreditos?: number;
+    estadoEficacia?: string;
+    saldoCaptacion?: number;
+    sucursalNombre?: string;
+    activosVehiculo?: number;
+    activosVivienda?: number;
+    descuentosFondo?: number;
+    fechaNacimiento?: string;
+    lugarExpedicion?: string;
+    ahorroPermanente?: number;
+    creditosVigentes?: number;
+    otrasDeducciones?: number;
+}
+
+export interface MotorProcessRow {
+    id: number;
+    radicado: string;
+    cedula: string;
+    request_json: Record<string, unknown> | null;
+    response_json: MotorProcessResp | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface MotorProcessResp {
+    motor2: string;       // "Viable" | "No Viable"
+    status: string;
+    radicado: string;
+    oferta?: MotorOferta;
+    processing?: MotorProcessing;
+}
+
+export interface MotorOferta {
+    linea?: string;
+    monto?: number;
+    plazo?: number;
+    escenario?: string;
+    cuota_mensual?: number;
+    tasa_mes_vencida?: number;
+    tasa_efectiva_anual?: number;
+}
+
+export interface MotorProcessing {
+    edad?: number;
+    cupoMax?: number;
+    cuotaDef?: number;
+    plazoDef?: number;
+    plazoMax?: number;
+    valorDef?: number;
+    solvencia?: number;
+    egresoFam?: number;
+    egresoTotal?: number;
+    egresoSector?: number;
+    capacPagoDisp?: number;
+    disponibleDesp?: number;
+    viabilidad1?: number;    // 1 = cumple, 0 = no cumple
+    viabilidadDef?: number;  // 1 = cumple, 0 = no cumple
+    scoreFondex?: number;
+    perfilFondex?: string;
+    prestaciones?: number;
+    antEficacia?: number;
+    antFondexYear?: number;
+    fechaEvaluacion?: string;
+    puntosEdad?: number;
+    puntoSalario?: number;
+    puntosFondex?: number;
+    puntosCreditos?: number;
+    puntosEficacia?: number;
+    puntosCapta?: number;
+    puntosCoontrato?: number;
+    lineaCredito?: number;
+    modalidadCredito?: number;
+    creditoDisponible?: number;
+    maxMoraSector?: number;
+    cuotaCredito?: number;
+}
+
+export interface IdentityRow {
+    id: number;
+    radicado: string;
+    cedula: string;
+    request_json: IdentityPayload | null;
+    response_json: IdentityPayload | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface IdentityPayload {
+    id?: string | number;
+    radicado?: string;
+    status_face?: number;       // 1 = ok, 0 = fail
+    status_document?: number;   // 1 = ok, 0 = fail
+    tipo_validacion?: number;
+}
+
 // ─── Tipos UI ─────────────────────────────────────────────────────────────────
 
 export type SolicitudEstado =
@@ -199,145 +238,30 @@ export interface SolicitudUI {
     cedula: string;
     solicitante: string;
     fecha: string;
-    /** Monto solicitado (de motor_data_results.monto_solicitado o 0). */
+    /** Monto aprobado por el motor (oferta.monto). 0 si sin motor. */
     valor: number;
     estado: SolicitudEstado;
-    /** Score CIFIN del motor. null si no hay motor_data_results aún. */
+    /** Score TransUnion del asociado. null si no hay motor_data aún. */
     score: number | null;
-    /** Texto a mostrar en el header del detalle. */
+    /** Texto descriptivo de la decisión para el header. */
     decisionTexto: string;
-    /** True si NO hay motor_process_results para este radicado. */
+    /** True si NO existe motor_process_results para este radicado. */
     sinMotor: boolean;
-    /** True si el operador ya marcó esta solicitud como gestionada. */
+    /** True si el operador marcó esta solicitud como gestionada. */
     gestionado: boolean;
-    /** ISO timestamp de cuándo fue gestionada. null si no lo está. */
+    /** ISO timestamp de gestión. null si no gestionada. */
     gestionadoAt: string | null;
-    /** Lista de validaciones para el panel de campos clave. */
+    /** Items de validación para el panel de criterios clave. */
     validaciones: ValidacionItem[];
     raw: {
-        valida1: Valida1ResultRow;
-        motor_process: MotorProcessResultRow | null;
-        motor_data: MotorDataResultRow | null;
-        identity_validation: IdentityValidationRow | null;
-        credito_decision: CreditoDecisionRow | null;
+        valida1: Valida1Row;
+        motor_process: MotorProcessRow | null;
+        motor_data: MotorDataRow | null;
+        identity: IdentityRow | null;
     };
 }
 
-// ─── Lógica de derivación ─────────────────────────────────────────────────────
-
-/**
- * Estado de la solicitud derivado de los datos disponibles:
- *   - Sin motor_process_results:
- *       valida1 = 1 → en_revision (pasó valida1 pero motor no corrió)
- *       valida1 = 2 → rechazado (no pasó validación inicial)
- *   - Con motor_process_results, usa concepto_definitivo o viable_cmd:
- *       viable_cmd = 1 → aprobado/viable
- *       viable_cmd = 0 → no_viable
- *       si status = "APROBADO" → aprobado
- *       si status = "RECHAZADO" → rechazado
- */
-function deriveEstado(
-    valida1: Valida1ResultRow,
-    motor: MotorProcessResultRow | null,
-): SolicitudEstado {
-    if (motor) {
-        const concepto = (motor.concepto_definitivo ?? "").toUpperCase();
-        if (concepto === "PREAPROBADO") return "preaprobado";
-        if (concepto === "NO VIABLE") return "no_viable";
-        if (concepto === "REVISAR") return "en_revision";
-
-        const status = (motor.status ?? "").toUpperCase();
-        if (status === "APROBADO" || motor.viable_cmd === 1) return "aprobado";
-        if (status === "RECHAZADO" || motor.viable_cmd === 0) return "no_viable";
-        
-        return "en_revision";
-    }
-    if (valida1.valida1 === 2) return "rechazado";
-    if (valida1.valida1 === 1) return "en_revision";
-    return "pendiente";
-}
-
-function buildValidaciones(
-    valida1: Valida1ResultRow,
-    motor: MotorProcessResultRow | null,
-): ValidacionItem[] {
-    const v: ValidacionItem[] = [
-        { label: "Resultado Validación 1", key: "valida1", estado: norm(valida1.valida1) },
-        { label: "Validación Activo", key: "valida_activo", estado: norm(valida1.valida_activo) },
-        { label: "Validación Edad", key: "valida_edad", estado: norm(valida1.valida_edad) },
-        { label: "Validación Asociado", key: "valida_asociado", estado: norm(valida1.valida_asociado) },
-        { label: "Validación No Retirado", key: "valida_no_retirado", estado: norm(valida1.valida_no_retirado) },
-    ];
-
-    if (motor) {
-        v.push(
-            { label: "Cumple endeudamiento", key: "cumple_end", estado: norm(motor.cumple_end) },
-            { label: "Cumple solvencia", key: "cumple_sol", estado: norm(motor.cumple_sol) },
-            { label: "Cumple disponible", key: "cumple_disp", estado: norm(motor.cumple_disp) },
-            { label: "Cumple desprotegido", key: "cumple_des", estado: norm(motor.cumple_des) },
-            { label: "4 criterios", key: "cumplimiento_4_criterios", estado: norm(motor.cumplimiento_4_criterios) },
-        );
-    }
-
-    return v;
-}
-
-function norm(v: number | null | undefined): 1 | 2 | null {
-    if (v === 1) return 1;
-    if (v === 2) return 2;
-    return null;
-}
-
-function extractScore(motorData: MotorDataResultRow | null): number | null {
-    if (!motorData) return null;
-    if (typeof motorData.score_cifin === "number") return motorData.score_cifin;
-    return null;
-}
-
-function extractMonto(motorData: MotorDataResultRow | null, motor: MotorProcessResultRow | null): number {
-    // Prioridad: monto solicitado del data, luego el definitivo del process
-    if (motorData?.monto_solicitado != null) {
-        const n = Number(motorData.monto_solicitado);
-        if (Number.isFinite(n)) return n;
-    }
-    if (motor?.monto_definitivo != null) {
-        const n = Number(motor.monto_definitivo);
-        if (Number.isFinite(n)) return n;
-    }
-    return 0;
-}
-
-function normalizeFecha(raw: string | null | undefined): string {
-    if (!raw) return "";
-    // Formato "YYYYMMDD" o "YYYY-MM-DD" o ISO
-    const m = String(raw).match(/^(\d{4})-?(\d{2})-?(\d{2})/);
-    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-    return String(raw);
-}
-
-function buildSolicitante(valida1: Valida1ResultRow): string {
-    const nombre = (valida1.nombre ?? "").trim();
-    const apellido = (valida1.primer_apellido ?? "").trim();
-    const full = `${nombre} ${apellido}`.trim();
-    return full || "—";
-}
-
-function decisionTexto(
-    motor: MotorProcessResultRow | null,
-    valida1: Valida1ResultRow,
-): string {
-    if (!motor) {
-        if (valida1.valida1 === 1) return "Pendiente de motor";
-        if (valida1.valida1 === 2) return valida1.mensaje ?? "No apto en validación inicial";
-        return "Pendiente de validación";
-    }
-    if (motor.concepto_definitivo) return motor.concepto_definitivo;
-    if (motor.viable_cmd === 1) return "Crédito Preaprobado";
-    if (motor.viable_cmd === 0) return "Crédito No Viable";
-    return motor.status ?? "—";
-}
-
-// ─── Opciones ────────────────────────────────────────────────────────────────
+// ─── Opciones de listado ──────────────────────────────────────────────────────
 
 export interface ListSolicitudesOptions {
     limit?: number;
@@ -345,12 +269,117 @@ export interface ListSolicitudesOptions {
     cedulaFilter?: string;
 }
 
+// ─── Helpers de derivación ────────────────────────────────────────────────────
+
+/** Normaliza valores 1/2 del esquema interno. */
+function norm(v: number | null | undefined): 1 | 2 | null {
+    if (v === 1) return 1;
+    if (v === 2) return 2;
+    return null;
+}
+
+/** Normaliza valores booleanos 0/1 a convencion 1/2. */
+function normBool(v: number | null | undefined): 1 | 2 | null {
+    if (v === 1) return 1;
+    if (v === 0) return 2;
+    return null;
+}
+
+function deriveEstado(
+    v1: Valida1Row,
+    motor: MotorProcessRow | null,
+): SolicitudEstado {
+    if (motor) {
+        const motor2 = (motor.response_json?.motor2 ?? "").toUpperCase().trim();
+        if (motor2 === "VIABLE") return "aprobado";
+        if (motor2 === "NO VIABLE") return "no_viable";
+        // Fallback al flag interno de viabilidad
+        const proc = motor.response_json?.processing;
+        if (proc?.viabilidadDef === 1) return "aprobado";
+        if (proc?.viabilidadDef === 0) return "no_viable";
+        return "en_revision";
+    }
+    const motor1 = v1.response_json?.motor1;
+    if (motor1 === 2) return "rechazado";
+    if (motor1 === 1) return "en_revision";
+    return "pendiente";
+}
+
+function buildValidaciones(
+    v1: Valida1Row,
+    motor: MotorProcessRow | null,
+): ValidacionItem[] {
+    const resp = v1.response_json;
+    const items: ValidacionItem[] = [
+        { label: "Resultado Validación 1", key: "motor1", estado: norm(resp?.motor1) },
+        { label: "Validación Identidad (ID)", key: "valida_id", estado: norm(resp?.valida_id) },
+        { label: "Validación Email", key: "valida_email", estado: norm(resp?.valida_email) },
+        { label: "Validación Celular", key: "valida_celular", estado: norm(resp?.valida_celular) },
+        { label: "Validación Apellido", key: "valida_last_name", estado: norm(resp?.valida_last_name) },
+        { label: "Validación Capacidad", key: "valida_capacidad", estado: norm(resp?.valida_capacidad) },
+        { label: "Validación Estado Laboral", key: "valida_estado_laboral", estado: norm(resp?.valida_estado_laboral) },
+    ];
+
+    if (motor) {
+        const proc = motor.response_json?.processing;
+        items.push(
+            { label: "Viabilidad crediticia", key: "viabilidadDef", estado: normBool(proc?.viabilidadDef) },
+            { label: "Viabilidad criterio 1", key: "viabilidad1", estado: normBool(proc?.viabilidad1) },
+        );
+    }
+
+    return items;
+}
+
+function buildSolicitante(v1: Valida1Row, md: MotorDataRow | null): string {
+    const nombre =
+        md?.response_json?.datos_asociado?.deudor ||
+        v1.response_json?.datos_asociado?.nombre_completo ||
+        v1.request_json?.last_name ||
+        "";
+    return nombre.trim() || "—";
+}
+
+function decisionTexto(v1: Valida1Row, motor: MotorProcessRow | null): string {
+    if (!motor) {
+        const resp = v1.response_json;
+        if (resp?.motor1 === 1) return "Pendiente de motor";
+        if (resp?.motor1 === 2) return resp.mensaje ?? "No apto en validación inicial";
+        return "Pendiente de validación";
+    }
+    const resp = motor.response_json;
+    if (resp?.motor2) return resp.motor2;
+    return resp?.status ?? "—";
+}
+
+function extractScore(md: MotorDataRow | null): number | null {
+    if (!md) return null;
+    const resp = md.response_json;
+    const score = resp?.detallado?.tu_score ?? resp?.datos_asociado?.scoreTU;
+    return typeof score === "number" ? score : null;
+}
+
+function extractMonto(motor: MotorProcessRow | null): number {
+    const monto = motor?.response_json?.oferta?.monto;
+    return typeof monto === "number" && Number.isFinite(monto) ? monto : 0;
+}
+
+function parseFecha(radicado: string, fallback: string): string {
+    // Formato radicado: "{cedula}_{DDMMYY}{HHMMSS}"
+    const ts = radicado.split("_")[1] ?? "";
+    if (ts.length >= 6 && !isNaN(Number(ts.slice(0, 6)))) {
+        return `20${ts.slice(4, 6)}-${ts.slice(2, 4)}-${ts.slice(0, 2)}`;
+    }
+    return fallback.slice(0, 10);
+}
+
 // ─── Marcar como gestionado ───────────────────────────────────────────────────
 
 /**
- * Marca una solicitud como gestionada actualizando valida1_results.
- * Requiere que la tabla tenga columnas gestionado_at y gestionado_by
- * (si no existen, fallará — la tabla puede necesitar una migration).
+ * Marca una solicitud como gestionada.
+ * Requiere columnas gestionado_at y gestionado_by en valida1_results:
+ *   ALTER TABLE valida1_results ADD COLUMN IF NOT EXISTS gestionado_at timestamptz;
+ *   ALTER TABLE valida1_results ADD COLUMN IF NOT EXISTS gestionado_by text;
  */
 export async function marcarGestionado(
     radicado: string,
@@ -381,7 +410,7 @@ export async function listSolicitudes(
 
     return safeCall(
         async () => {
-            // 1) valida1_results es el universo principal
+            // 1. valida1_results — universo principal, orden descendente
             let v1Query = supabase
                 .from("valida1_results")
                 .select("*")
@@ -392,16 +421,17 @@ export async function listSolicitudes(
                 v1Query = v1Query.eq("cedula", options.cedulaFilter);
 
             const v1Res = await v1Query;
-            if (v1Res.error) return { data: null, error: v1Res.error };
+            if (v1Res.error) return { data: null as unknown as SolicitudUI[], error: v1Res.error };
 
-            const v1Rows = (v1Res.data ?? []) as Valida1ResultRow[];
-            if (v1Rows.length === 0)
-                return { data: [] as SolicitudUI[], error: null };
+            const v1Rows = (v1Res.data ?? []) as Valida1Row[];
+            if (v1Rows.length === 0) return { data: [] as SolicitudUI[], error: null };
 
             const radicados = v1Rows.map((r) => r.radicado);
 
-            // 2) En paralelo: motor_process_results, motor_data_results, identity_validations
-            const [mpRes, mdRes, ivRes, cdRes] = await Promise.all([
+            // 2. Tablas relacionadas en paralelo — todas usan radicado como FK
+            // TODO: crear una DB view `motor_data_slim` que exponga solo datos_asociado + detallado
+            // para evitar transferir api_responses (puede pesar varios KB por fila).
+            const [mpRes, mdRes, ivRes] = await Promise.all([
                 supabase
                     .from("motor_process_results")
                     .select("*")
@@ -409,68 +439,43 @@ export async function listSolicitudes(
                 supabase
                     .from("motor_data_results")
                     .select("*")
-                    .in("radicado_valida1", radicados),
+                    .in("radicado", radicados),
                 supabase
-                    .from("identity_validations")
-                    .select("*")
-                    .in("radicado_valida1", radicados),
-                supabase
-                    .from("credito_decisiones")
+                    .from("identity_results")
                     .select("*")
                     .in("radicado", radicados),
             ]);
 
-            const mpRows = (mpRes.data ?? []) as MotorProcessResultRow[];
-            const mdRows = (mdRes.data ?? []) as MotorDataResultRow[];
-            const ivRows = ivRes.error ? [] : ((ivRes.data ?? []) as IdentityValidationRow[]);
-            const cdRows = cdRes.error ? [] : ((cdRes.data ?? []) as CreditoDecisionRow[]);
+            if (mpRes.error) console.warn("[bandeja] motor_process_results:", mpRes.error.message);
+            if (mdRes.error) console.warn("[bandeja] motor_data_results:", mdRes.error.message);
+            if (ivRes.error) console.warn("[bandeja] identity_results:", ivRes.error.message);
 
-            if (mpRes.error)
-                console.warn("[bandeja] motor_process_results:", mpRes.error.message);
-            if (mdRes.error)
-                console.warn("[bandeja] motor_data_results:", mdRes.error.message);
-            if (ivRes.error)
-                console.warn("[bandeja] identity_validations:", ivRes.error.message);
-            if (cdRes.error)
-                console.warn("[bandeja] credito_decisiones:", cdRes.error.message);
+            // 3. Indexar por radicado para lookups O(1)
+            const mpByRad = new Map<string, MotorProcessRow>(
+                (mpRes.data ?? []).map((r) => [r.radicado, r as MotorProcessRow]),
+            );
+            const mdByRad = new Map<string, MotorDataRow>(
+                (mdRes.data ?? []).map((r) => [r.radicado, r as MotorDataRow]),
+            );
+            const ivByRad = new Map<string, IdentityRow>(
+                (ivRes.data ?? []).map((r) => [r.radicado, r as IdentityRow]),
+            );
 
-            // Indexar por radicado (usando radicado_valida1 para motor_data e identity)
-            const mpByRad = new Map<string, MotorProcessResultRow>();
-            for (const r of mpRows) mpByRad.set(r.radicado, r);
-
-            const mdByRad = new Map<string, MotorDataResultRow>();
-            for (const r of mdRows) {
-                if (r.radicado_valida1) mdByRad.set(r.radicado_valida1, r);
-            }
-
-            const ivByRad = new Map<string, IdentityValidationRow>();
-            for (const r of ivRows) {
-                if (r.radicado_valida1) ivByRad.set(r.radicado_valida1, r);
-            }
-
-            const cdByRad = new Map<string, CreditoDecisionRow>();
-            for (const r of cdRows) cdByRad.set(r.radicado, r);
-
+            // 4. Construir SolicitudUI[]
             const out: SolicitudUI[] = v1Rows.map((v1) => {
                 const motor = mpByRad.get(v1.radicado) ?? null;
                 const md = mdByRad.get(v1.radicado) ?? null;
                 const iv = ivByRad.get(v1.radicado) ?? null;
 
-                // Fecha: del motor_data si existe; sino de valida1 fecha_generacion
-                const fecha =
-                    normalizeFecha(md?.fecha_ingreso) ||
-                    normalizeFecha(v1.fecha_generacion) ||
-                    normalizeFecha(v1.created_at);
-
                 return {
                     radicado: v1.radicado,
-                    cedula: v1.cedula ?? "",
-                    solicitante: buildSolicitante(v1),
-                    fecha,
-                    valor: extractMonto(md, motor),
+                    cedula: v1.cedula,
+                    solicitante: buildSolicitante(v1, md),
+                    fecha: parseFecha(v1.radicado, v1.created_at),
+                    valor: extractMonto(motor),
                     estado: deriveEstado(v1, motor),
                     score: extractScore(md),
-                    decisionTexto: decisionTexto(motor, v1),
+                    decisionTexto: decisionTexto(v1, motor),
                     sinMotor: !motor,
                     gestionado: !!v1.gestionado_at,
                     gestionadoAt: v1.gestionado_at ?? null,
@@ -479,8 +484,7 @@ export async function listSolicitudes(
                         valida1: v1,
                         motor_process: motor,
                         motor_data: md,
-                        identity_validation: iv,
-                        credito_decision: cdByRad.get(v1.radicado) ?? null,
+                        identity: iv,
                     },
                 };
             });

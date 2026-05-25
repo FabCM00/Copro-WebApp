@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Coopvalili",
-    description: "Coopvalili",
+    title: "Fondex Web App",
+    description: "Fondex Web App",
     icons: {
         icon: "https://i.imgur.com/kBwQizJ.jpeg",
         apple: "https://i.imgur.com/kBwQizJ.jpeg",

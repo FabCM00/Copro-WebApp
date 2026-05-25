@@ -28,7 +28,7 @@ export default function NotFound() {
                 <img
                     src="/404.png"
                     alt="Página no encontrada"
-                    className="w-full max-w-[320px] select-none mb-8"
+                    className="w-full max-w-[700px] select-none mb-8"
                     draggable={false}
                 />
 

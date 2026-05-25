@@ -15,7 +15,6 @@ export const navigation: NavSection[] = [
     {
         items: [
             { label: "Usuarios", href: "/admin/usuarios", icon: Users },
-            { label: "Datos Asociados", href: "/admin/asociados", icon: Database },
             { label: "Mi Perfil", href: "/admin/perfil", icon: User },
 
         ],

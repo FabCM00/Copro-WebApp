@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
         }
 
         // 2. Correo válido — enviar enlace de recuperación
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${baseUrl.replace(/\/$/, "")}/set-password`,
         });

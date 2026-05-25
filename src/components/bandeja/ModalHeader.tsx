@@ -8,6 +8,7 @@ export type DetailModalTab = "campos" | "motor_json";
 interface ModalHeaderProps {
     solicitud: SolicitudUI;
     onClose?: () => void;
+    onGestionar?: () => void;
 }
 
 const ESTADO_LABEL: Record<SolicitudEstado, string> = {
@@ -28,7 +29,7 @@ const ESTADO_STYLE: Record<SolicitudEstado, { border: string; badge: string }> =
     no_viable: { border: "border-l-orange-500", badge: "bg-orange-100 text-orange-700 border-orange-200" },
 };
 
-export function ModalHeader({ solicitud, onClose }: ModalHeaderProps) {
+export function ModalHeader({ solicitud, onClose, onGestionar }: ModalHeaderProps) {
     const style = solicitud.sinMotor
         ? { border: "border-l-amber-400", badge: "bg-amber-100 text-amber-700 border-amber-200" }
         : ESTADO_STYLE[solicitud.estado];
@@ -69,17 +70,32 @@ export function ModalHeader({ solicitud, onClose }: ModalHeaderProps) {
 
             </div>
 
-            {/* Score + close */}
+            {/* Score + acciones + close */}
             <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="bg-[#012340] text-white px-3 py-2 text-center min-w-[60px]">
-                    <p className="text-[9px] font-bold tracking-[0.14em] uppercase opacity-60">CIFIN</p>
-                    <p className="text-lg font-bold mt-0.5 leading-none">{solicitud.score ?? "—"}</p>
-                </div>
+            
+                {/* Botón gestionar — solo si no está gestionada */}
+                {!solicitud.gestionado && onGestionar && (
+                    <button
+                        onClick={onGestionar}
+                        className="h-9 px-4 bg-[#012340] hover:bg-[#012340]/85 text-white text-[11px] font-semibold tracking-wide rounded-sm transition-colors whitespace-nowrap"
+                    >
+                        Marcar gestionado
+                    </button>
+                )}
+
+                {/* Badge gestionada */}
+                {solicitud.gestionado && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-sm">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                        <span className="text-[11px] font-semibold text-emerald-700">Gestionada</span>
+                    </div>
+                )}
+
                 {onClose && (
                     <button
                         onClick={onClose}
                         title="Cerrar"
-                        className="h-8 w-8 flex items-center justify-center text-[#0D0D0D]/30 hover:text-[#012340] transition-colors"
+                        className="h-8 w-8 flex items-center justify-center text-[#0D0D0D]/30 hover:text-[#012340] transition-colors rounded-sm"
                     >
                         <X className="h-4 w-4" />
                     </button>

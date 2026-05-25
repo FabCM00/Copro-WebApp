@@ -17,6 +17,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
                 </div>
                 {children}
             </div>
+            
         </div>
     );
 }

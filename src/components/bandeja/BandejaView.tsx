@@ -48,12 +48,17 @@ const ESTADO_DOT: Record<SolicitudEstado, string> = {
     no_viable: "bg-orange-500",
 };
 
+const PAGE_SIZE = 20;
+const SKELETON_ROWS = Array.from({ length: 8 }, (_, i) => i);
+const COP_FORMATTER = new Intl.NumberFormat("es-CO");
+
 export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
     const { user } = useAuth();
     const [solicitudes, setSolicitudes] = useState<SolicitudUI[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [rawQuery, setRawQuery] = useState("");
     const [query, setQuery] = useState("");
     const [filtro, setFiltro] = useState<FiltroTab>("todos");
     const [selectedRadicado, setSelectedRadicado] = useState<string | null>(null);
@@ -77,10 +82,13 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
         return () => document.removeEventListener("mousedown", handler);
     }, [filtroOpen]);
 
-    const PAGE_SIZE = 20;
+    useEffect(() => {
+        const t = setTimeout(() => setQuery(rawQuery), 250);
+        return () => clearTimeout(t);
+    }, [rawQuery]);
 
     const fetchData = useCallback(async (clearSelection = false) => {
-        const r = await bandeja.listSolicitudes({ limit: 200, cedulaFilter });
+        const r = await bandeja.listSolicitudes({ limit: 500, cedulaFilter });
         if (!r.ok) { setError(r.error.message); setSolicitudes([]); return; }
         setError(null);
         setSolicitudes(r.data);
@@ -113,38 +121,44 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
         await fetchData(true);
     };
 
-    const totalActivas = useMemo(() => solicitudes.filter((s) => !s.gestionado).length, [solicitudes]);
-    const totalGestionadas = useMemo(() => solicitudes.filter((s) => s.gestionado).length, [solicitudes]);
+    // Un solo scan para: totales + lista base + conteos por estado
+    const { totalActivas, totalGestionadas, baseList, conteoPorEstado } = useMemo(() => {
+        let activas = 0;
+        let gestionadas = 0;
+        const base: SolicitudUI[] = [];
+        const conteo = new Map<FiltroTab, number>();
 
-    const filtradas = useMemo(() => {
-        let out = solicitudes.filter((s) => (vistaGestionados ? s.gestionado : !s.gestionado));
-        if (filtro !== "todos") out = out.filter((s) => s.estado === filtro);
-        if (query.trim()) {
-            const q = query.toLowerCase();
-            out = out.filter(
-                (s) =>
-                    s.cedula.toLowerCase().includes(q) ||
-                    s.solicitante.toLowerCase().includes(q) ||
-                    s.radicado.toLowerCase().includes(q),
-            );
+        for (const s of solicitudes) {
+            if (s.gestionado) gestionadas++;
+            else activas++;
+
+            if (vistaGestionados ? s.gestionado : !s.gestionado) {
+                base.push(s);
+                conteo.set(s.estado, (conteo.get(s.estado) ?? 0) + 1);
+            }
         }
-        return out;
-    }, [solicitudes, filtro, query, vistaGestionados]);
+        conteo.set("todos", base.length);
 
-    const conteoPorEstado = useMemo(() => {
-        const base = solicitudes.filter((s) => (vistaGestionados ? s.gestionado : !s.gestionado));
-        const map = new Map<FiltroTab, number>();
-        map.set("todos", base.length);
-        for (const s of base) map.set(s.estado, (map.get(s.estado) ?? 0) + 1);
-        return map;
+        return { totalActivas: activas, totalGestionadas: gestionadas, baseList: base, conteoPorEstado: conteo };
     }, [solicitudes, vistaGestionados]);
+
+    // Filtrado secundario: estado + búsqueda (sobre baseList ya particionada)
+    const filtradas = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (filtro === "todos" && !q) return baseList;
+        return baseList.filter((s) => {
+            if (filtro !== "todos" && s.estado !== filtro) return false;
+            if (q && !s.cedula.includes(q) && !s.solicitante.toLowerCase().includes(q) && !s.radicado.includes(q)) return false;
+            return true;
+        });
+    }, [baseList, filtro, query]);
 
     const totalPages = Math.max(1, Math.ceil(filtradas.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
     const pageStart = (safePage - 1) * PAGE_SIZE;
     const pageRows = filtradas.slice(pageStart, pageStart + PAGE_SIZE);
 
-    useEffect(() => { setPage(1); }, [filtro, query, solicitudes, vistaGestionados]);
+    useEffect(() => { setPage(1); }, [filtro, rawQuery, solicitudes, vistaGestionados]);
     useEffect(() => { setSelectedRadicado(null); setModalOpen(false); }, [vistaGestionados]);
 
     const seleccionada = useMemo(
@@ -170,7 +184,10 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
         URL.revokeObjectURL(url);
     };
 
-    const confirmSolicitud = confirmRadicado ? solicitudes.find((s) => s.radicado === confirmRadicado) : null;
+    const confirmSolicitud = useMemo(
+        () => (confirmRadicado ? solicitudes.find((s) => s.radicado === confirmRadicado) ?? null : null),
+        [confirmRadicado, solicitudes],
+    );
 
     return (
         <div className="flex flex-col -m-4 sm:-m-6 lg:-m-8 h-[calc(100%+2rem)] sm:h-[calc(100%+3rem)] lg:h-[calc(100%+4rem)]">
@@ -268,8 +285,8 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#0D0D0D]/30" />
                             <Input
                                 placeholder="Buscar solicitudes…"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                value={rawQuery}
+                                onChange={(e) => setRawQuery(e.target.value)}
                                 className="rounded-none border-[#0D0D0D]/12 pl-8 h-8 text-xs focus-visible:ring-0 focus-visible:border-[#012340]/40 bg-[#0D0D0D]/[0.02]"
                             />
                         </div>
@@ -313,7 +330,7 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                     <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-[#0D0D0D]/10">
                         {loading ? (
                             <div className="flex flex-col">
-                                {Array.from({ length: 8 }).map((_, i) => (
+                                {SKELETON_ROWS.map((i) => (
                                     <div key={i} className="px-4 py-3 border-b border-[#0D0D0D]/5 animate-pulse">
                                         <div className="flex items-center justify-between mb-1.5">
                                             <div className="flex items-center gap-1.5">
@@ -467,8 +484,8 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
 }
 
 function formatCurrency(v: number): string {
-    if (!Number.isFinite(v)) return "$0";
-    return "$" + new Intl.NumberFormat("es-CO").format(Math.round(v));
+    if (!Number.isFinite(v) || v === 0) return "$0";
+    return "$" + COP_FORMATTER.format(Math.round(v));
 }
 
 function formatFechaCorta(iso: string): string {
