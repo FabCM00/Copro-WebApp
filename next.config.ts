@@ -7,7 +7,8 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 const csp = [
     "default-src 'self'",
     // Next.js requiere unsafe-inline/unsafe-eval para HMR y chunks en runtime
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    // cdn.jsdelivr.net es requerido por @monaco-editor/react para cargar el editor
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
     "style-src 'self' 'unsafe-inline'",
     // data: para blobs de CSV export; i.imgur.com para favicon externo
     `img-src 'self' data: blob: https://i.imgur.com https://${supabaseHost}`,
