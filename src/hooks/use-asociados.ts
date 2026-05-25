@@ -30,7 +30,8 @@ export interface DatosAsociado {
     created_at?: string | null;
     updated_at?: string | null;
 
-    [key: string]: any;
+    // Columnas adicionales no tipadas — usar con narrowing explícito en el consumidor.
+    [key: string]: unknown;
 }
 
 interface UseAsociadosOptions {
@@ -108,16 +109,10 @@ export function useAsociados(
             );
 
             setTotal(count || 0);
-        } catch (err: any) {
-            console.error(
-                "Error cargando asociados:",
-                err,
-            );
-
-            setError(
-                err?.message ||
-                "Error cargando asociados",
-            );
+        } catch (err: unknown) {
+            const msg =
+                err instanceof Error ? err.message : "Error cargando asociados";
+            setError(msg);
         } finally {
             setLoading(false);
         }

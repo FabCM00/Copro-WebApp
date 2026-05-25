@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
-    let body: any;
+    let body: Record<string, unknown>;
     try {
-        body = await req.json();
+        body = (await req.json()) as Record<string, unknown>;
     } catch {
         return NextResponse.json({ ok: false, message: "Body inválido." }, { status: 400 });
     }
 
-    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const emailRaw = body?.email;
+    const email =
+        typeof emailRaw === "string" ? emailRaw.trim().toLowerCase() : "";
     if (!email) {
         return NextResponse.json({ ok: false, message: "El correo es obligatorio." }, { status: 400 });
     }

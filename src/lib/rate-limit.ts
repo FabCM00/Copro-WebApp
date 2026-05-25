@@ -102,10 +102,11 @@ export async function checkRateLimit(key: string): Promise<RateLimitResult> {
     }
 
     if (process.env.NODE_ENV === "production") {
-        console.warn(
-            "[rate-limit] Upstash no configurado — usando Map en memoria. " +
-            "No es seguro en deployments multi-instancia. " +
-            "Define UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN.",
+        // En serverless cada cold start resetea el Map → el rate limit no funciona.
+        // Falla duro para que el deploy no pase sin Redis configurado.
+        throw new Error(
+            "[rate-limit] Upstash Redis no configurado en producción. " +
+            "Define UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN en las variables de entorno.",
         );
     }
 

@@ -64,9 +64,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Validar body
-    let body: any;
+    let body: Record<string, unknown>;
     try {
-        body = await req.json();
+        body = (await req.json()) as Record<string, unknown>;
     } catch {
         return NextResponse.json(
             { ok: false, code: "invalid_json", message: "Body inválido." },
@@ -74,9 +74,9 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    const email: string | undefined = body?.email;
+    const emailRaw = body?.email;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (typeof email !== "string" || !emailRegex.test(email)) {
+    if (typeof emailRaw !== "string" || !emailRegex.test(emailRaw)) {
         return NextResponse.json(
             {
                 ok: false,
@@ -86,10 +86,11 @@ export async function POST(req: NextRequest) {
             { status: 400 },
         );
     }
+    const email = emailRaw;
 
     const username: string | undefined =
         typeof body?.username === "string" && body.username.trim()
-            ? body.username.trim()
+            ? (body.username as string).trim()
             : undefined;
 
     const origin =

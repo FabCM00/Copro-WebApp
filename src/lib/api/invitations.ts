@@ -41,12 +41,9 @@ export async function inviteUser(
     let admin;
     try {
         admin = getSupabaseAdmin();
-    } catch (e: any) {
-        return {
-            ok: false,
-            code: "internal",
-            message: e?.message ?? "No se pudo inicializar el cliente admin.",
-        };
+    } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "No se pudo inicializar el cliente admin.";
+        return { ok: false, code: "internal", message: msg };
     }
 
     // 1) Invitar al usuario usando el API de admin de Supabase.

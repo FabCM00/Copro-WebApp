@@ -265,27 +265,40 @@ export interface SolicitudUI {
 
 export interface ListSolicitudesOptions {
     limit?: number;
-    /** Si se pasa, filtra por cédula exacta. */
+    /** Filtra por cédula exacta en la DB. */
     cedulaFilter?: string;
+    /**
+     * Filtra por estado de gestión en la DB (columna gestionado_at).
+     * true  → solo gestionados (gestionado_at IS NOT NULL)
+     * false → solo activos    (gestionado_at IS NULL)
+     * omitir → sin filtro     (todos)
+     */
+    gestionadoFilter?: boolean;
+    /**
+     * Filtra por cédula o radicado que comiencen con el texto dado.
+     * Se aplica en la DB antes de traer datos.
+     */
+    searchPrefix?: string;
 }
 
 // ─── Helpers de derivación ────────────────────────────────────────────────────
 
-/** Normaliza valores 1/2 del esquema interno. */
-function norm(v: number | null | undefined): 1 | 2 | null {
+/** Normaliza valores 1/2 del esquema interno. @internal */
+export function norm(v: number | null | undefined): 1 | 2 | null {
     if (v === 1) return 1;
     if (v === 2) return 2;
     return null;
 }
 
-/** Normaliza valores booleanos 0/1 a convencion 1/2. */
-function normBool(v: number | null | undefined): 1 | 2 | null {
+/** Normaliza valores booleanos 0/1 a convencion 1/2. @internal */
+export function normBool(v: number | null | undefined): 1 | 2 | null {
     if (v === 1) return 1;
     if (v === 0) return 2;
     return null;
 }
 
-function deriveEstado(
+/** @internal */
+export function deriveEstado(
     v1: Valida1Row,
     motor: MotorProcessRow | null,
 ): SolicitudEstado {
@@ -364,7 +377,8 @@ function extractMonto(motor: MotorProcessRow | null): number {
     return typeof monto === "number" && Number.isFinite(monto) ? monto : 0;
 }
 
-function parseFecha(radicado: string, fallback: string): string {
+/** @internal */
+export function parseFecha(radicado: string, fallback: string): string {
     // Formato radicado: "{cedula}_{DDMMYY}{HHMMSS}"
     const ts = radicado.split("_")[1] ?? "";
     if (ts.length >= 6 && !isNaN(Number(ts.slice(0, 6)))) {
@@ -419,6 +433,19 @@ export async function listSolicitudes(
 
             if (options.cedulaFilter)
                 v1Query = v1Query.eq("cedula", options.cedulaFilter);
+
+            if (options.gestionadoFilter === true)
+                v1Query = v1Query.not("gestionado_at", "is", null);
+            else if (options.gestionadoFilter === false)
+                v1Query = v1Query.is("gestionado_at", null);
+
+            if (options.searchPrefix) {
+                // Filtra en DB registros cuya cédula o radicado empiece con el texto dado.
+                // OR en PostgREST: se encadena con or()
+                v1Query = v1Query.or(
+                    `cedula.ilike.${options.searchPrefix}%,radicado.ilike.${options.searchPrefix}%`,
+                );
+            }
 
             const v1Res = await v1Query;
             if (v1Res.error) return { data: null as unknown as SolicitudUI[], error: v1Res.error };

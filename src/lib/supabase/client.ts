@@ -1,3 +1,4 @@
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
 
 let _capturedHash = "";
@@ -25,7 +26,7 @@ export const CAPTURED_AUTH_HASH = _capturedHash;
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClientComponentClient();
 
 // Cliente aislado por pestaña: usa sessionStorage en lugar de localStorage.
 // Cualquier operación de auth que haga este cliente (signOut, setSession, etc.)

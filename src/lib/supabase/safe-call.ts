@@ -11,7 +11,7 @@ const isDev =
     typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
 
 export async function safeCall<T>(
-    fn: () => Promise<{ data: T | null; error: any } | T>,
+    fn: () => Promise<{ data: T | null; error: unknown } | T>,
     options: SafeCallOptions,
 ): Promise<SafeResult<T>> {
     const { label, timeoutMs = DEFAULT_TIMEOUT_MS, debug = isDev } = options;
@@ -39,14 +39,14 @@ export async function safeCall<T>(
                 typeof result === "object" &&
                 ("data" in (result as object) || "error" in (result as object))
             ) {
-                const r = result as { data: T | null; error: any };
+                const r = result as { data: T | null; error: unknown };
                 if (r.error) {
                     return { ok: false, error: classifySupabaseError(r.error) };
                 }
                 return { ok: true, data: r.data as T };
             }
             return { ok: true, data: result as T };
-        } catch (e: any) {
+        } catch (e: unknown) {
             return { ok: false, error: classifyException(e) };
         }
     })();
@@ -66,24 +66,35 @@ export async function safeCall<T>(
     return winner;
 }
 
-function classifySupabaseError(err: any): SafeError {
-    const message: string = err?.message || err?.error_description || err?.msg || "Error desconocido";
-    const status: number | undefined = err?.status;
-    const code: string | undefined = err?.code;
+/** Convierte un error de Supabase/PostgREST (forma objeto) a SafeError. @internal */
+export function classifySupabaseError(err: unknown): SafeError {
+    const raw = err != null && typeof err === "object" ? (err as Record<string, unknown>) : {};
+    const message = String(raw.message ?? raw.error_description ?? raw.msg ?? "Error desconocido");
+    const status = typeof raw.status === "number" ? raw.status : undefined;
+    const code = typeof raw.code === "string" ? raw.code : undefined;
 
-    if (code === "PGRST116" || status === 404 || /cannot coerce/i.test(message)) return { code: "not_found", message, cause: err };
-    if (status === 401 || status === 403 || /invalid.*credentials/i.test(message) || /jwt/i.test(message) || /not authenticated/i.test(message)) {
-        return { code: "auth", message, cause: err };
-    }
+    if (code === "PGRST116" || status === 404 || /cannot coerce/i.test(message))
+        return { code: "not_found", message, cause: err };
+    if (
+        status === 401 || status === 403 ||
+        /invalid.*credentials/i.test(message) ||
+        /jwt/i.test(message) ||
+        /not authenticated/i.test(message)
+    ) return { code: "auth", message, cause: err };
     if (status && status >= 400 && status < 500) return { code: "validation", message, cause: err };
     if (status && status >= 500) return { code: "server", message, cause: err };
     return { code: "unknown", message, cause: err };
 }
 
-function classifyException(e: any): SafeError {
-    if (e?.name === "AbortError") return { code: "timeout", message: "La operacion fue cancelada.", cause: e };
-    if (e?.name === "TypeError" && /fetch|network/i.test(e?.message ?? "")) {
+/** Convierte una excepción de JavaScript a SafeError. @internal */
+export function classifyException(e: unknown): SafeError {
+    const raw = e != null && typeof e === "object" ? (e as Record<string, unknown>) : {};
+    const name = typeof raw.name === "string" ? raw.name : "";
+    const message = typeof raw.message === "string" ? raw.message : String(e ?? "Error desconocido");
+
+    if (name === "AbortError") return { code: "timeout", message: "La operacion fue cancelada.", cause: e };
+    if (name === "TypeError" && /fetch|network/i.test(message)) {
         return { code: "network", message: "No se pudo conectar al servidor.", cause: e };
     }
-    return { code: "unknown", message: e?.message ?? String(e), cause: e };
+    return { code: "unknown", message, cause: e };
 }
