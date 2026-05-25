@@ -316,8 +316,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
                         norm(v1resp?.valida_id),
                         norm(v1resp?.valida_email),
                         norm(v1resp?.valida_celular),
-                        norm(v1resp?.valida_last_name),
-                        norm(v1resp?.valida_capacidad),
                         norm(v1resp?.valida_estado_laboral),
                     ]}
                 />
@@ -325,8 +323,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
                 <CriterioRow label="Validación Identidad (ID)" value={norm(v1resp?.valida_id)} />
                 <CriterioRow label="Validación Email" value={norm(v1resp?.valida_email)} />
                 <CriterioRow label="Validación Celular" value={norm(v1resp?.valida_celular)} />
-                <CriterioRow label="Validación Apellido" value={norm(v1resp?.valida_last_name)} />
-                <CriterioRow label="Validación Capacidad" value={norm(v1resp?.valida_capacidad)} />
                 <CriterioRow label="Validación Estado Laboral" value={norm(v1resp?.valida_estado_laboral)} />
             </Section>
 

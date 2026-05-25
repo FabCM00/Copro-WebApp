@@ -9,12 +9,12 @@ const csp = [
     // Next.js requiere unsafe-inline/unsafe-eval para HMR y chunks en runtime
     // cdn.jsdelivr.net es requerido por @monaco-editor/react para cargar el editor
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
     // data: para blobs de CSV export; i.imgur.com para favicon externo
     `img-src 'self' data: blob: https://i.imgur.com https://${supabaseHost}`,
     "font-src 'self'",
     // WebSocket (wss:) para Supabase Realtime; self para route handlers
-    `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
+    `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://cdn.jsdelivr.net`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
