@@ -16,6 +16,8 @@ import {
     Users as UsersIcon,
     UserCheck,
     UserX,
+    ToggleLeft,
+    ToggleRight,
 } from "lucide-react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
@@ -31,6 +33,8 @@ export default function AdminUsuariosPage() {
     const [refreshing, setRefreshing] = useState(false);
     const [filterQuery, setFilterQuery] = useState("");
     const [page, setPage] = useState(1);
+
+    const [toggling, setToggling] = useState<Record<string, boolean>>({});
 
     // Modal estado
     const [modalOpen, setModalOpen] = useState(false);
@@ -91,6 +95,20 @@ export default function AdminUsuariosPage() {
         const inactivos = total - activos;
         return { total, activos, inactivos };
     }, [usersData]);
+
+    const handleToggleEstado = async (user: Profile) => {
+        setToggling((prev) => ({ ...prev, [user.id]: true }));
+        const nuevoEstado = !user.estado;
+        const r = await profiles.updateProfile(user.id, { estado: nuevoEstado });
+        if (r.ok) {
+            setUsersData((prev) =>
+                prev.map((u) =>
+                    u.id === user.id ? { ...u, estado: nuevoEstado } : u,
+                ),
+            );
+        }
+        setToggling((prev) => ({ ...prev, [user.id]: false }));
+    };
 
     if (authLoading)
         return <LoadingScreen message="Cargando módulo de usuarios..." />;
@@ -229,7 +247,7 @@ export default function AdminUsuariosPage() {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b border-[#0D0D0D]/15">
-                                {["USUARIO", "CORREO", "ROL", "ESTADO", "FECHA CREADO"].map(
+                                {["USUARIO", "CORREO", "ROL", "ESTADO", "FECHA CREADO", "ACCIONES"].map(
                                     (col) => (
                                         <th
                                             key={col}
@@ -246,7 +264,7 @@ export default function AdminUsuariosPage() {
                                 <>
                                     {Array.from({ length: 5 }).map((_, i) => (
                                         <tr key={i} className="border-b border-[#0D0D0D]/5">
-                                            {[112, 176, 80, 80, 112].map((w, j) => (
+                                            {[112, 176, 80, 80, 112, 96].map((w, j) => (
                                                 <td key={j} className="py-4 px-4">
                                                     <div
                                                         className="h-3.5 bg-[#0D0D0D]/8 rounded animate-pulse mx-auto"
@@ -260,7 +278,7 @@ export default function AdminUsuariosPage() {
                             ) : filtered.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="py-10 text-center text-sm text-[#0D0D0D]/40"
                                     >
                                         No se encontraron usuarios.
@@ -308,6 +326,27 @@ export default function AdminUsuariosPage() {
                                                     user.created_at,
                                                 ).toLocaleDateString("es-CO")
                                                 : "—"}
+                                        </td>
+                                        <td className="py-4 px-4 text-center">
+                                            <button
+                                                onClick={() => handleToggleEstado(user)}
+                                                disabled={toggling[user.id]}
+                                                title={user.estado !== false ? "Desactivar usuario" : "Activar usuario"}
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold tracking-widest uppercase border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                    user.estado !== false
+                                                        ? "border-red-200 text-red-600 hover:bg-red-50"
+                                                        : "border-green-200 text-green-700 hover:bg-green-50"
+                                                }`}
+                                            >
+                                                {toggling[user.id] ? (
+                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                ) : user.estado !== false ? (
+                                                    <ToggleLeft className="h-3.5 w-3.5" />
+                                                ) : (
+                                                    <ToggleRight className="h-3.5 w-3.5" />
+                                                )}
+                                                {user.estado !== false ? "Desactivar" : "Activar"}
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
