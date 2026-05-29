@@ -72,6 +72,8 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
     const [modalOpen, setModalOpen] = useState(false);
     const [filtroOpen, setFiltroOpen] = useState(false);
     const [showList, setShowList] = useState(true);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [autoRefreshSecs, setAutoRefreshSecs] = useState(30);
     const filtroRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -94,6 +96,8 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
         if (!r.ok) { setError(r.error.message); setSolicitudes([]); return; }
         setError(null);
         setSolicitudes(r.data);
+        setLastUpdated(new Date());
+        setAutoRefreshSecs(30);
         if (clearSelection) {
             setSelectedRadicado(null);
         } else {
@@ -108,6 +112,16 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
         setLoading(true);
         fetchData().finally(() => setLoading(false));
     }, [fetchData]);
+
+    // Auto-refresh cada 30 segundos
+    useEffect(() => {
+        if (autoRefreshSecs <= 0) {
+            fetchData();
+            return;
+        }
+        const t = setTimeout(() => setAutoRefreshSecs((n) => n - 1), 1000);
+        return () => clearTimeout(t);
+    }, [autoRefreshSecs, fetchData]);
 
     useEffect(() => {
         if (!selectedRadicado) { setSelectedDetail(null); return; }
@@ -225,11 +239,22 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                         className="rounded-none border-[#0D0D0D]/15 h-8 px-3 text-[11px] font-semibold tracking-wide hover:bg-[#012340] hover:text-white hover:border-[#012340]">
                         <Download className="mr-1.5 h-3.5 w-3.5" /> CSV
                     </Button>
-                    <Button onClick={handleRefresh} disabled={refreshing}
-                        className="rounded-none bg-[#012340] hover:bg-[#012340]/90 text-white h-8 px-3 text-[11px] font-semibold tracking-wide">
-                        <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-                        Actualizar
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                        {lastUpdated && !refreshing && (
+                            <span className="text-[10px] text-[#0D0D0D]/35 font-medium tabular-nums hidden sm:inline">
+                                {lastUpdated.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                                {" · "}
+                                <span className={autoRefreshSecs <= 5 ? "text-[#F29A2E] font-bold" : ""}>
+                                    {autoRefreshSecs}s
+                                </span>
+                            </span>
+                        )}
+                        <Button onClick={handleRefresh} disabled={refreshing}
+                            className="rounded-none bg-[#012340] hover:bg-[#012340]/90 text-white h-8 px-3 text-[11px] font-semibold tracking-wide">
+                            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                            Actualizar
+                        </Button>
+                    </div>
                 </div>
             </div>
 
