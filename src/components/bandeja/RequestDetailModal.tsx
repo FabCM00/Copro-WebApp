@@ -1,9 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { type SolicitudUI } from "@/lib/supabase";
+import { Loader2 } from "lucide-react";
+import { type SolicitudUI, type SolicitudDetail } from "@/lib/bandeja";
 import { ModalHeader, ModalTabs, type DetailModalTab } from "./ModalHeader";
 import { MotorJsonView, ResumenSolicitud } from "./DetailContent";
+
+function isDetail(s: SolicitudUI): s is SolicitudDetail {
+    return s.raw != null;
+}
 
 interface RequestDetailModalProps {
     solicitud: SolicitudUI;
@@ -19,6 +24,7 @@ export function RequestDetailModal({
     onGestionar,
 }: RequestDetailModalProps) {
     const [activeTab, setActiveTab] = useState<DetailModalTab>(initialTab);
+    const detail = isDetail(solicitud) ? solicitud : null;
 
     return (
         <div
@@ -35,8 +41,17 @@ export function RequestDetailModal({
                 />
                 <ModalTabs active={activeTab} onChange={setActiveTab} />
                 <div className="flex-1 overflow-auto min-h-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-                    {activeTab === "campos" && <ResumenSolicitud solicitud={solicitud} />}
-                    {activeTab === "motor_json" && <MotorJsonView solicitud={solicitud} hideExpand />}
+                    {detail ? (
+                        <>
+                            {activeTab === "campos"     && <ResumenSolicitud solicitud={detail} />}
+                            {activeTab === "motor_json" && <MotorJsonView    solicitud={detail} hideExpand />}
+                        </>
+                    ) : (
+                        <div className="flex h-full items-center justify-center gap-2 text-[#0D0D0D]/35">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-xs font-medium">Cargando detalle…</span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

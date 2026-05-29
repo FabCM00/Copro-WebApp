@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/app/globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { auth } from "../../auth";
+import { Providers } from "@/components/providers";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -22,11 +23,14 @@ export const metadata: Metadata = {
     },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+    // Pasa la sesión del servidor para eliminar el flash de "cargando" en cliente
+    const session = await auth();
+
     return (
         <html lang="es">
             <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-                <AuthProvider>{children}</AuthProvider>
+                <Providers session={session}>{children}</Providers>
             </body>
         </html>
     );

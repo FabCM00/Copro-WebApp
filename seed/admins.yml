@@ -6,6 +6,6 @@
 # Luego ejecuta: npm run seed:admins
 
 admins:
-  - email: hcardoso@wantnget.com.co
-    username: hcardoso
-    password: "CambiarEsto123!"
+  - email: administrador@fondex.com.co
+    username: Administrador
+    password: "Fondex2026@"

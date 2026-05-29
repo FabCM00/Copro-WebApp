@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, type ReactNode } from "react";
 import Editor from "@monaco-editor/react";
-import { type SolicitudUI } from "@/lib/supabase";
+import { type SolicitudDetail } from "@/lib/bandeja";
 import {
     AlertTriangle,
     CheckCircle2,
@@ -166,7 +166,7 @@ function CriteriaSummary({ values }: { values: (1 | 2 | null)[] }) {
 
 // ─── Resumen principal ────────────────────────────────────────────────────────
 
-export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
+export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudDetail }) {
     const v1 = solicitud.raw.valida1;
     const mp = solicitud.raw.motor_process;
     const md = solicitud.raw.motor_data;
@@ -389,7 +389,7 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
                 <Section title="Motivos no apto">
                     {detallesRechazo.length > 0 ? (
                         <div className="divide-y divide-[#0D0D0D]/6">
-                            {detallesRechazo.map((detalle, i) => (
+                            {detallesRechazo.map((detalle: string, i: number) => (
                                 <div
                                     key={i}
                                     className="flex items-start gap-2.5 px-4 py-3 bg-red-50/60"
@@ -478,7 +478,7 @@ const MOTOR_JSON_PANELS: {
         { id: "auditoria", shortLabel: "Auditoría", icon: <ClipboardList className="h-3.5 w-3.5" /> },
     ];
 
-function buildAuditoriaResumen(solicitud: SolicitudUI): Record<string, unknown> {
+function buildAuditoriaResumen(solicitud: SolicitudDetail): Record<string, unknown> {
     const v1 = solicitud.raw.valida1;
     const mp = solicitud.raw.motor_process;
     const proc = mp?.response_json?.processing;
@@ -526,7 +526,7 @@ function buildAuditoriaResumen(solicitud: SolicitudUI): Record<string, unknown> 
 export function MotorJsonView({
     solicitud,
 }: {
-    solicitud: SolicitudUI;
+    solicitud: SolicitudDetail;
     hideExpand?: boolean;
 }) {
     const [activePanel, setActivePanel] = useState<MotorJsonPanel>("motor_process");
@@ -534,13 +534,13 @@ export function MotorJsonView({
     const getPanelData = (panel: MotorJsonPanel): unknown => {
         switch (panel) {
             case "valida1":
-                return solicitud.raw.valida1;
+                return solicitud.raw.valida1.response_json;
             case "motor_data":
-                return solicitud.raw.motor_data;
+                return solicitud.raw.motor_data?.response_json ?? null;
             case "motor_process":
-                return solicitud.raw.motor_process;
+                return solicitud.raw.motor_process?.response_json ?? null;
             case "identity":
-                return solicitud.raw.identity;
+                return solicitud.raw.identity?.response_json ?? null;
             case "auditoria":
                 return buildAuditoriaResumen(solicitud);
         }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { bandeja } from "@/lib/supabase";
-import type { SolicitudUI, SolicitudEstado } from "@/lib/supabase";
+import { bandeja } from "@/lib/bandeja";
+import type { SolicitudUI, SolicitudEstado } from "@/lib/bandeja";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,8 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
     const [query, setQuery] = useState("");
     const [filtro, setFiltro] = useState<FiltroTab>("todos");
     const [selectedRadicado, setSelectedRadicado] = useState<string | null>(null);
+    const [selectedDetail, setSelectedDetail] = useState<SolicitudUI | null>(null);
+    const [detailLoading, setDetailLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<DetailModalTab>("campos");
     const [page, setPage] = useState(1);
     const [vistaGestionados, setVistaGestionados] = useState(false);
@@ -106,6 +108,14 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
         setLoading(true);
         fetchData().finally(() => setLoading(false));
     }, [fetchData]);
+
+    useEffect(() => {
+        if (!selectedRadicado) { setSelectedDetail(null); return; }
+        setDetailLoading(true);
+        bandeja.getSolicitud(selectedRadicado)
+            .then((r) => { if (r.ok) setSelectedDetail(r.data); })
+            .finally(() => setDetailLoading(false));
+    }, [selectedRadicado]);
 
     const handleRefresh = async () => { setRefreshing(true); await fetchData(); setRefreshing(false); };
 
@@ -422,11 +432,18 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                 {/* ── Right: detail ── */}
                 <div className="flex-1 min-w-0 overflow-hidden">
                     {seleccionada ? (
-                        <RequestDetail
-                            solicitud={seleccionada}
-                            activeTab={activeTab}
-                            onGestionar={mode === "admin" && !seleccionada.gestionado ? () => handleGestionar(seleccionada.radicado) : undefined}
-                        />
+                        detailLoading ? (
+                            <div className="h-full flex flex-col items-center justify-center gap-3 text-[#0D0D0D]/25">
+                                <RefreshCw className="h-6 w-6 animate-spin" />
+                                <p className="text-sm font-medium">Cargando detalle…</p>
+                            </div>
+                        ) : (
+                            <RequestDetail
+                                solicitud={selectedDetail ?? seleccionada}
+                                activeTab={activeTab}
+                                onGestionar={mode === "admin" && !seleccionada.gestionado ? () => handleGestionar(seleccionada.radicado) : undefined}
+                            />
+                        )
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center gap-3 text-[#0D0D0D]/25">
                             <Inbox className="h-10 w-10" />
@@ -438,7 +455,7 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
 
             {modalOpen && seleccionada && (
                 <RequestDetailModal
-                    solicitud={seleccionada}
+                    solicitud={selectedDetail ?? seleccionada}
                     initialTab={activeTab}
                     onClose={() => setModalOpen(false)}
                     onGestionar={!seleccionada.gestionado ? () => handleGestionar(seleccionada.radicado) : undefined}

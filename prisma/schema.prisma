@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Valida1Results {
+  id            BigInt               @id @default(autoincrement())
+  radicado      String               @unique
+  cedula        String
+  requestJson   Json?                @map("request_json")
+  responseJson  Json?                @map("response_json")
+  createdAt     DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  gestionadoAt  DateTime?            @map("gestionado_at") @db.Timestamptz(6)
+  gestionadoBy  String?              @map("gestionado_by")
+  motorData     MotorDataResults?
+  motorProcess  MotorProcessResults?
+  identity      IdentityResults?
+  workflow      WorkflowResults?
+
+  @@index([cedula], map: "idx_valida1_cedula")
+  @@index([updatedAt(sort: Desc)], map: "idx_valida1_updated")
+  @@map("valida1_results")
+}
+
+model MotorDataResults {
+  id           BigInt         @id @default(autoincrement())
+  radicado     String         @unique
+  cedula       String
+  requestJson  Json?          @map("request_json")
+  responseJson Json?          @map("response_json")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  valida1      Valida1Results @relation(fields: [radicado], references: [radicado], onUpdate: Cascade, onDelete: Restrict, map: "fk_motor_data_radicado")
+
+  @@index([cedula], map: "idx_motor_data_cedula")
+  @@index([updatedAt(sort: Desc)], map: "idx_motor_data_updated")
+  @@map("motor_data_results")
+}
+
+model MotorProcessResults {
+  id           BigInt         @id @default(autoincrement())
+  radicado     String         @unique
+  cedula       String
+  requestJson  Json?          @map("request_json")
+  responseJson Json?          @map("response_json")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  valida1      Valida1Results @relation(fields: [radicado], references: [radicado], onUpdate: Cascade, onDelete: Restrict, map: "fk_motor_process_radicado")
+
+  @@index([cedula], map: "idx_motor_process_cedula")
+  @@index([updatedAt(sort: Desc)], map: "idx_motor_process_updated")
+  @@map("motor_process_results")
+}
+
+model IdentityResults {
+  id           BigInt         @id @default(autoincrement())
+  radicado     String         @unique
+  cedula       String
+  requestJson  Json?          @map("request_json")
+  responseJson Json?          @map("response_json")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  valida1      Valida1Results @relation(fields: [radicado], references: [radicado], onUpdate: Cascade, onDelete: Restrict, map: "fk_identity_radicado")
+
+  @@index([cedula], map: "idx_identity_cedula")
+  @@index([updatedAt(sort: Desc)], map: "idx_identity_updated")
+  @@map("identity_results")
+}
+
+model WorkflowResults {
+  id           BigInt         @id @default(autoincrement())
+  radicado     String         @unique
+  cedula       String
+  requestJson  Json?          @map("request_json")
+  responseJson Json?          @map("response_json")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  valida1      Valida1Results @relation(fields: [radicado], references: [radicado], onUpdate: Cascade, onDelete: Restrict, map: "fk_workflow_radicado")
+
+  @@index([cedula], map: "idx_workflow_cedula")
+  @@index([updatedAt(sort: Desc)], map: "idx_workflow_updated")
+  @@map("workflow_results")
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String               @unique
+  emailVerified       DateTime?            @db.Timestamptz(6)
+  image               String?
+  passwordHash        String?
+  role                Role                 @default(USER)
+  active              Boolean              @default(false)
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  sentInvitations     InvitationToken[]    @relation("InvitedBy")
+  passwordResetTokens PasswordResetToken[]
+
+  @@index([email], map: "idx_user_email")
+  @@index([role], map: "idx_user_role")
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_password_reset_user")
+
+  @@index([token], map: "idx_password_reset_token")
+  @@index([userId], map: "idx_password_reset_userid")
+  @@map("password_reset_tokens")
+}
+
+model InvitationToken {
+  id          String   @id @default(cuid())
+  email       String
+  token       String   @unique
+  role        Role     @default(USER)
+  invitedById String   @map("invited_by_id")
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
+  accepted    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  invitedBy   User     @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_invitation_invited_by")
+
+  @@index([email], map: "idx_invitation_email")
+  @@index([token], map: "idx_invitation_token")
+  @@map("invitation_tokens")
+}
+
+enum Role {
+  USER
+  ADMIN
+}

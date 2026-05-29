@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { auth } from "@/lib/supabase";
 import { Shield, Clock, Mail, Lock, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -41,13 +40,23 @@ export function ProfileView() {
             return;
         }
         setPwLoading(true);
-        const r = await auth.updatePassword(pwForm.newPwd);
-        setPwLoading(false);
-        if (r.ok) {
-            setPwResult({ ok: true, msg: "Contraseña actualizada correctamente." });
-            setPwForm({ newPwd: "", confirmPwd: "" });
-        } else {
-            setPwResult({ ok: false, msg: r.error.message || "Error al actualizar la contraseña." });
+        try {
+            const res  = await fetch("/api/auth/change-password", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ password: pwForm.newPwd }),
+            });
+            const json = await res.json() as { ok: boolean; message?: string };
+            if (json.ok) {
+                setPwResult({ ok: true, msg: "Contraseña actualizada correctamente." });
+                setPwForm({ newPwd: "", confirmPwd: "" });
+            } else {
+                setPwResult({ ok: false, msg: json.message || "Error al actualizar la contraseña." });
+            }
+        } catch {
+            setPwResult({ ok: false, msg: "Error de conexión. Inténtalo de nuevo." });
+        } finally {
+            setPwLoading(false);
         }
     };
 

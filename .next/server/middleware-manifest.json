@@ -3,34 +3,30 @@
   "middleware": {
     "/": {
       "files": [
-        "server/edge/chunks/_be702585._.js",
-        "server/edge/chunks/node_modules_@supabase_postgrest-js_dist_index_mjs_74a5cd10._.js",
-        "server/edge/chunks/node_modules_@supabase_auth-js_dist_module_33c852e9._.js",
-        "server/edge/chunks/node_modules_b32d5f01._.js",
-        "server/edge/chunks/[root-of-the-server]__8978dbac._.js",
-        "server/edge/chunks/turbopack-edge-wrapper_78a70e22.js"
+        "server/edge-runtime-webpack.js",
+        "server/middleware.js"
       ],
       "name": "middleware",
       "page": "/",
       "matchers": [
         {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)).*))(\\.json|\\.rsc|\\.segments\\/.+\\.segment\\.rsc)?[\\/#\\?]?$",
-          "originalSource": "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)).*)"
+          "regexp": "^/.*$",
+          "originalSource": "/:path*"
         }
       ],
       "wasm": [],
       "assets": [],
       "env": {
         "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "xFPvQeFyCqWc6vBFzoH1LRfgsaOSPe2ZzxkspTkL2lo=",
-        "__NEXT_PREVIEW_MODE_ID": "f7f003da72fcc87552ba493d914a6fa7",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "ff3c1eec61ebc3717cccbd9e41f81fda0b0eb69bd3f303a64ef2ffeee092330f",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "1ad50e7facc3f98b03c0991028f58c45c6468d813bca5b42d43b8a5493467f2e"
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "WjkFMG+mckwkZnvdK1QS3lW63DIloROcCXZnPEukLeU=",
+        "__NEXT_PREVIEW_MODE_ID": "ac7f8018e2465bff0f2fb0d6e70d8e3f",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "848ca56f885d472da45b84678e86546ba754e456484776dedc5f522aecc16156",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "c5a7c0180cbef94177d5c7583bcd9e62da4903f633198f4ad0167001cd3fb55f"
       }
     }
   },
+  "functions": {},
   "sortedMiddleware": [
     "/"
-  ],
-  "functions": {}
+  ]
 }
