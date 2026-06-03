@@ -51,6 +51,14 @@ export interface RawIdentityRow {
   [key: string]: Json;
 }
 
+export interface RawCoprocenvaEnviosRow {
+  radicado: string;
+  cedula: string | null;
+  request_json:  Json;
+  response_json: Json;
+  [key: string]: Json;
+}
+
 
 export interface SolicitudUI {
   radicado: string;
@@ -66,11 +74,12 @@ export interface SolicitudUI {
   gestionadoAt: string | null;
   validaciones: ValidacionItem[];
   raw?: {
-    valida1:          RawValida1Row;
-    motor_process:    RawMotorProcessRow | null;
-    motor_data:       RawMotorDataRow    | null;
-    identity:         RawIdentityRow     | null;
-    credito_decision: null;
+    valida1:           RawValida1Row;
+    motor_process:     RawMotorProcessRow       | null;
+    motor_data:        RawMotorDataRow          | null;
+    identity:          RawIdentityRow           | null;
+    coprocenva_envios: RawCoprocenvaEnviosRow   | null;
+    credito_decision:  null;
   };
 }
 

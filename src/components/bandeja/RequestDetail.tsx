@@ -1,7 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { type SolicitudUI, type SolicitudDetail } from "@/lib/bandeja";
+import { type SolicitudUI } from "@/lib/types";
 import { type DetailModalTab } from "./ModalHeader";
 import { ModalHeader } from "./ModalHeader";
 import { MotorJsonView, ResumenSolicitud } from "./DetailContent";
@@ -12,13 +11,8 @@ interface RequestDetailProps {
     onGestionar?: () => void;
 }
 
-function isDetail(s: SolicitudUI): s is SolicitudDetail {
-    return s.raw != null;
-}
-
-export function RequestDetail({ solicitud, activeTab }: RequestDetailProps) {
+export function RequestDetail({ solicitud, activeTab, onGestionar }: RequestDetailProps) {
     if (!solicitud) return null;
-    const detail = isDetail(solicitud) ? solicitud : null;
 
     return (
         <div className="flex flex-col bg-white border-l-0 border border-[#0D0D0D]/10 h-full overflow-hidden">
@@ -27,17 +21,8 @@ export function RequestDetail({ solicitud, activeTab }: RequestDetailProps) {
             </div>
 
             <div className="flex-1 min-h-0 overflow-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-                {detail ? (
-                    <>
-                        {activeTab === "campos"     && <ResumenSolicitud solicitud={detail} />}
-                        {activeTab === "motor_json" && <MotorJsonView    solicitud={detail} />}
-                    </>
-                ) : (
-                    <div className="flex h-full items-center justify-center gap-2 text-[#0D0D0D]/35">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span className="text-xs font-medium">Cargando detalle…</span>
-                    </div>
-                )}
+                {activeTab === "campos" && <ResumenSolicitud solicitud={solicitud} />}
+                {activeTab === "motor_json" && <MotorJsonView solicitud={solicitud} />}
             </div>
 
             {solicitud.gestionado && (

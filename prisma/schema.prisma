@@ -17,10 +17,10 @@ model Valida1Results {
   updatedAt     DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   gestionadoAt  DateTime?            @map("gestionado_at") @db.Timestamptz(6)
   gestionadoBy  String?              @map("gestionado_by")
-  motorData     MotorDataResults?
-  motorProcess  MotorProcessResults?
-  identity      IdentityResults?
-  workflow      WorkflowResults?
+  motorData         MotorDataResults?
+  motorProcess      MotorProcessResults?
+  identity          IdentityResults?
+  coprocenvaEnvios  CoprocenvaEnviosResults?
 
   @@index([cedula], map: "idx_valida1_cedula")
   @@index([updatedAt(sort: Desc)], map: "idx_valida1_updated")
@@ -72,19 +72,19 @@ model IdentityResults {
   @@map("identity_results")
 }
 
-model WorkflowResults {
+model CoprocenvaEnviosResults {
   id           BigInt         @id @default(autoincrement())
   radicado     String         @unique
-  cedula       String
+  cedula       String?
   requestJson  Json?          @map("request_json")
   responseJson Json?          @map("response_json")
   createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  valida1      Valida1Results @relation(fields: [radicado], references: [radicado], onUpdate: Cascade, onDelete: Restrict, map: "fk_workflow_radicado")
+  valida1      Valida1Results @relation(fields: [radicado], references: [radicado], onUpdate: Cascade, onDelete: Restrict, map: "fk_coprocenva_envios_radicado")
 
-  @@index([cedula], map: "idx_workflow_cedula")
-  @@index([updatedAt(sort: Desc)], map: "idx_workflow_updated")
-  @@map("workflow_results")
+  @@index([cedula], map: "idx_coprocenva_envios_cedula")
+  @@index([updatedAt(sort: Desc)], map: "idx_coprocenva_envios_updated")
+  @@map("coprocenva_envios_results")
 }
 
 model User {

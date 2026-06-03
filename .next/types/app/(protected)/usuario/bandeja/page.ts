@@ -1,4 +1,4 @@
-// File: C:\Users\hcard\Desktop\WANT N' GET\WebApp\Fondex-WebApp\src\app\(protected)\usuario\bandeja\page.tsx
+// File: C:\Users\hcard\Desktop\WANT N' GET\WebApp\Copro-WebApp\Fondex-WebApp\src\app\(protected)\usuario\bandeja\page.tsx
 import * as entry from '../../../../../../src/app/(protected)/usuario/bandeja/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
