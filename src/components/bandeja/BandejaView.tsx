@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type { SolicitudUI, SolicitudEstado } from "@/lib/types";
-import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,13 +10,17 @@ import {
   Download,
   Inbox,
   Maximize2,
-  ChevronDown,
   PanelLeftClose,
   PanelLeft,
+  SlidersHorizontal,
+  X,
+  CheckCircle2,
+  MoreVertical,
 } from "lucide-react";
 import { RequestDetail } from "./RequestDetail";
 import { RequestDetailModal } from "./RequestDetailModal";
 import { ModalTabs, type DetailModalTab } from "./ModalHeader";
+import { BandejaFiltros, type FiltroTab } from "./BandejaFiltros";
 
 type Mode = "admin" | "user";
 
@@ -25,18 +28,6 @@ interface BandejaViewProps {
   mode: Mode;
   cedulaFilter?: string;
 }
-
-type FiltroTab = "todos" | SolicitudEstado;
-
-const FILTROS: { id: FiltroTab; label: string }[] = [
-  { id: "todos", label: "Todos" },
-  { id: "aprobado", label: "Aprobado" },
-  { id: "preaprobado", label: "Preaprobado" },
-  { id: "en_revision", label: "En revisión" },
-  { id: "pendiente", label: "Pendiente" },
-  { id: "rechazado", label: "Rechazado" },
-  { id: "no_viable", label: "No viable" },
-];
 
 const ESTADO_LABEL: Record<SolicitudEstado, string> = {
   aprobado: "Aprobado",
@@ -56,8 +47,16 @@ const ESTADO_DOT: Record<SolicitudEstado, string> = {
   no_viable: "bg-orange-500",
 };
 
+const ESTADO_BADGE: Record<SolicitudEstado, string> = {
+  aprobado: "bg-green-50 text-green-700",
+  preaprobado: "bg-blue-50 text-blue-700",
+  en_revision: "bg-amber-50 text-amber-700",
+  pendiente: "bg-gray-100 text-gray-600",
+  rechazado: "bg-red-50 text-red-700",
+  no_viable: "bg-orange-50 text-orange-700",
+};
+
 export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
-  const { user } = useAuth();
   const [solicitudes, setSolicitudes] = useState<SolicitudUI[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,17 +75,28 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [filtroOpen, setFiltroOpen] = useState(false);
   const [showList, setShowList] = useState(true);
-  const filtroRef = useRef<HTMLDivElement>(null);
+  const [accionesOpen, setAccionesOpen] = useState(false);
+  const accionesRef = useRef<HTMLDivElement>(null);
 
+  // Cierra el menú de acciones al hacer clic afuera
   useEffect(() => {
-    if (!filtroOpen) return;
+    if (!accionesOpen) return;
     const handler = (e: MouseEvent) => {
-      if (filtroRef.current && !filtroRef.current.contains(e.target as Node))
-        setFiltroOpen(false);
+      if (
+        accionesRef.current &&
+        !accionesRef.current.contains(e.target as Node)
+      )
+        setAccionesOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [filtroOpen]);
+  }, [accionesOpen]);
+
+  const filtrosActivos = filtro !== "todos" ? 1 : 0;
+
+  const limpiarFiltros = () => {
+    setFiltro("todos");
+  };
 
   const PAGE_SIZE = 20;
 
@@ -298,31 +308,75 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Acción principal — solo cuando hay una solicitud seleccionable */}
           {seleccionada && !seleccionada.gestionado && (
             <Button
               onClick={() => handleGestionar(seleccionada.radicado)}
-              className="rounded-none bg-[#012340] hover:bg-[#012340]/90 text-white h-8 px-3 text-[11px] font-semibold tracking-wide"
+              className="rounded-md bg-[#012340] hover:bg-[#012340]/90 text-white h-7 px-2.5 text-[10px] font-semibold tracking-wide shadow-sm"
             >
+              <CheckCircle2 className="mr-1 h-3 w-3" />
               Marcar como Gestionado
             </Button>
           )}
-          <Button
-            variant="outline"
-            onClick={handleExportCSV}
-            className="rounded-none border-[#0D0D0D]/15 h-8 px-3 text-[11px] font-semibold tracking-wide hover:bg-[#012340] hover:text-white hover:border-[#012340]"
-          >
-            <Download className="mr-1.5 h-3.5 w-3.5" /> CSV
-          </Button>
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="rounded-none bg-[#012340] hover:bg-[#012340]/90 text-white h-8 px-3 text-[11px] font-semibold tracking-wide"
-          >
-            <RefreshCw
-              className={`mr-1.5 h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
-            />
-            Actualizar
-          </Button>
+
+          {/* Menú de acciones secundarias */}
+          <div className="relative" ref={accionesRef}>
+            <button
+              onClick={() => setAccionesOpen((o) => !o)}
+              title="Acciones"
+              className={`flex items-center justify-center h-7 w-7 rounded-md border transition-colors ${
+                accionesOpen
+                  ? "border-[#012340] bg-[#012340] text-white"
+                  : "border-[#0D0D0D]/12 text-[#0D0D0D]/55 hover:border-[#012340]/40 hover:text-[#012340]"
+              }`}
+            >
+              <MoreVertical className="h-3.5 w-3.5" />
+            </button>
+
+            {accionesOpen && (
+              <div className="absolute right-0 top-full mt-1.5 z-30 w-48 bg-white border border-[#0D0D0D]/12 rounded-md shadow-lg overflow-hidden py-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                {/* Acción de la solicitud seleccionada */}
+                {seleccionada && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setModalOpen(true);
+                        setAccionesOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-[#0D0D0D]/70 hover:bg-[#012340] hover:text-white transition-colors"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      Expandir
+                    </button>
+                    <div className="my-1 h-px bg-[#0D0D0D]/8" />
+                  </>
+                )}
+                <button
+                  onClick={() => {
+                    handleRefresh();
+                    setAccionesOpen(false);
+                  }}
+                  disabled={refreshing}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-[#0D0D0D]/70 hover:bg-[#012340] hover:text-white transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                  />
+                  Actualizar
+                </button>
+                <button
+                  onClick={() => {
+                    handleExportCSV();
+                    setAccionesOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-[12px] font-medium text-[#0D0D0D]/70 hover:bg-[#012340] hover:text-white transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar CSV
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -379,78 +433,69 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
               <ModalTabs active={activeTab} onChange={setActiveTab} />
             )}
           </div>
-          {seleccionada ? (
-            <button
-              onClick={() => setModalOpen(true)}
-              title="Ver en pantalla completa"
-              className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-[#0D0D0D]/35 hover:text-[#012340] transition-colors flex-shrink-0"
-            >
-              <Maximize2 className="h-3 w-3" />
-              Expandir
-            </button>
-          ) : null}
         </div>
       </div>
 
       {/* ── Two-panel body ── */}
       <div className="flex flex-1 min-h-0 overflow-hidden bg-white">
+        {/* ── Panel de Filtros empotrado (al lado de la lista) ── */}
+        <BandejaFiltros
+          open={filtroOpen}
+          filtro={filtro}
+          conteoPorEstado={conteoPorEstado}
+          filtrosActivos={filtrosActivos}
+          onFiltroChange={setFiltro}
+          onLimpiar={limpiarFiltros}
+          onClose={() => setFiltroOpen(false)}
+        />
+
         {/* ── Left: search + filters + list ── */}
         {showList && (
           <div className="w-[340px] flex-shrink-0 flex flex-col border-r border-[#0D0D0D]/10 bg-white overflow-hidden transition-all">
             <div className="flex-shrink-0 px-3 py-2.5 border-b border-[#0D0D0D]/8">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#0D0D0D]/30" />
-                <Input
-                  placeholder="Buscar solicitudes…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="rounded-none border-[#0D0D0D]/12 pl-8 h-8 text-xs focus-visible:ring-0 focus-visible:border-[#012340]/40 bg-[#0D0D0D]/[0.02]"
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#0D0D0D]/30" />
+                  <Input
+                    placeholder="Buscar solicitudes…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="rounded-none border-[#0D0D0D]/12 pl-8 h-8 text-xs focus-visible:ring-0 focus-visible:border-[#012340]/40 bg-[#0D0D0D]/[0.02]"
+                  />
+                </div>
+                <button
+                  onClick={() => setFiltroOpen((o) => !o)}
+                  title="Filtros"
+                  className={`relative flex-shrink-0 h-8 w-8 flex items-center justify-center border transition-colors ${
+                    filtroOpen || filtrosActivos > 0
+                      ? "border-[#012340] bg-[#012340] text-white"
+                      : "border-[#0D0D0D]/12 text-[#0D0D0D]/55 hover:border-[#012340]/40 hover:text-[#012340]"
+                  }`}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  {filtrosActivos > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 px-0.5 flex items-center justify-center rounded-full bg-[#F29A2E] text-white text-[9px] font-bold leading-none">
+                      {filtrosActivos}
+                    </span>
+                  )}
+                </button>
               </div>
-            </div>
 
-            <div
-              ref={filtroRef}
-              className="flex-shrink-0 px-3 py-2 border-b border-[#0D0D0D]/8 relative"
-            >
-              <button
-                onClick={() => setFiltroOpen((o) => !o)}
-                className="flex items-center gap-2 h-7 px-3 w-full border border-[#0D0D0D]/12 bg-white text-[11px] font-semibold text-[#0D0D0D]/70 hover:border-[#012340]/40 transition-colors"
-              >
-                <span className="flex-1 text-left">
-                  {FILTROS.find((f) => f.id === filtro)?.label ?? "Todos"}
-                  <span className="ml-1.5 text-[10px] font-bold text-[#0D0D0D]/40">
-                    {conteoPorEstado.get(filtro) ?? 0}
-                  </span>
-                </span>
-                <ChevronDown
-                  className={`h-3.5 w-3.5 text-[#0D0D0D]/35 transition-transform ${filtroOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {filtroOpen && (
-                <div className="absolute left-3 right-3 top-full mt-0.5 z-20 bg-white border border-[#0D0D0D]/12 shadow-lg">
-                  {FILTROS.map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => {
-                        setFiltro(f.id);
-                        setFiltroOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold transition-colors ${
-                        filtro === f.id
-                          ? "bg-[#012340] text-white"
-                          : "text-[#0D0D0D]/65 hover:bg-[#0D0D0D]/[0.04]"
-                      }`}
-                    >
-                      {f.label}
-                      <span
-                        className={`text-[10px] font-bold ${filtro === f.id ? "opacity-70" : "opacity-40"}`}
-                      >
-                        {conteoPorEstado.get(f.id) ?? 0}
-                      </span>
-                    </button>
-                  ))}
+              {/* Chips de filtros activos */}
+              {filtrosActivos > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                  {filtro !== "todos" && (
+                    <FilterChip
+                      label={ESTADO_LABEL[filtro as SolicitudEstado]}
+                      onRemove={() => setFiltro("todos")}
+                    />
+                  )}
+                  <button
+                    onClick={limpiarFiltros}
+                    className="text-[10px] font-semibold text-[#0D0D0D]/40 hover:text-[#012340] transition-colors underline underline-offset-2"
+                  >
+                    Limpiar
+                  </button>
                 </div>
               )}
             </div>
@@ -512,7 +557,7 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                       onClick={() =>
                         setSelectedRadicado(selected ? null : s.radicado)
                       }
-                      className={`w-full text-left px-4 py-3 border-b border-[#0D0D0D]/5 transition-colors border-l-2 ${
+                      className={`group w-full text-left px-4 py-3 border-b border-[#0D0D0D]/5 transition-colors border-l-2 ${
                         selected
                           ? "bg-[#012340]/[0.05] border-l-[#012340]"
                           : "border-l-transparent hover:bg-[#0D0D0D]/[0.02]"
@@ -533,7 +578,7 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                           {formatFechaCorta(s.fecha)}
                         </span>
                       </div>
-                      <p className="font-mono text-[10px] text-[#0D0D0D]/40 truncate pl-3 mb-0.5">
+                      <p className="font-mono text-[10px] text-[#0D0D0D]/40 truncate pl-3 mb-1">
                         {s.radicado}
                       </p>
                       <div className="flex items-center justify-between gap-2 pl-3">
@@ -541,7 +586,7 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                           CC {s.cedula} · {formatCurrency(s.valor)}
                         </span>
                         <span
-                          className={`text-[10px] font-semibold flex-shrink-0 ${selected ? "text-[#012340]" : "text-[#0D0D0D]/35"}`}
+                          className={`flex-shrink-0 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide border ${ESTADO_BADGE[s.estado]}`}
                         >
                           {ESTADO_LABEL[s.estado]}
                         </span>
@@ -696,6 +741,27 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
         </div>
       )}
     </div>
+  );
+}
+
+function FilterChip({
+  label,
+  onRemove,
+}: {
+  label: string;
+  onRemove: () => void;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-[#012340]/[0.07] text-[#012340] text-[10px] font-semibold rounded">
+      {label}
+      <button
+        onClick={onRemove}
+        className="hover:bg-[#012340]/15 rounded p-0.5 transition-colors"
+        title="Quitar filtro"
+      >
+        <X className="h-2.5 w-2.5" />
+      </button>
+    </span>
   );
 }
 
