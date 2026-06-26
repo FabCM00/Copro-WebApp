@@ -41,20 +41,40 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/usuario/bandeja/route.js"
     ],
+    "/api/usuario/bandeja/[radicado]/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/usuario/bandeja/[radicado]/route.js"
+    ],
+    "/api/usuario/documentos/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/usuario/documentos/route.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
+    ],
     "/api/auth/[...nextauth]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/auth/[...nextauth]/route.js"
     ],
-    "/login/page": [
+    "/api/usuario/documentos/download/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/login/page.js"
+      "static/chunks/app/api/usuario/documentos/download/route.js"
     ],
-    "/api/usuario/bandeja/[radicado]/route": [
+    "/(protected)/usuario/perfil/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/usuario/bandeja/[radicado]/route.js"
+      "static/chunks/app/(protected)/usuario/perfil/page.js"
+    ],
+    "/api/health/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/health/route.js"
     ]
   }
 }

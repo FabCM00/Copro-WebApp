@@ -1,9 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { type SolicitudUI } from "@/lib/types";
+import { type SolicitudUI, type SolicitudDetail } from "@/lib/bandeja";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { ModalHeader, ModalTabs, type DetailModalTab } from "./ModalHeader";
 import { MotorJsonView, ResumenSolicitud } from "./DetailContent";
+import { DocumentosTab } from "./documentos/DocumentosTab";
+
+function isDetail(s: SolicitudUI): s is SolicitudDetail {
+    return s.raw != null;
+}
 
 interface RequestDetailModalProps {
     solicitud: SolicitudUI;
@@ -19,6 +25,7 @@ export function RequestDetailModal({
     onGestionar,
 }: RequestDetailModalProps) {
     const [activeTab, setActiveTab] = useState<DetailModalTab>(initialTab);
+    const detail = isDetail(solicitud) ? solicitud : null;
 
     return (
         <div
@@ -27,34 +34,30 @@ export function RequestDetailModal({
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="relative flex flex-col bg-white w-[98vw] max-w-[98vw] h-[94vh] shadow-2xl border border-[#0D0D0D]/10 rounded-none">
-                <ModalHeader solicitud={solicitud} onClose={onClose} />
+            <div className="relative flex flex-col bg-white w-[98vw] max-w-[98vw] h-[94vh] shadow-2xl border border-[#0D0D0D]/10 rounded-md overflow-hidden">
+                <ModalHeader
+                    solicitud={solicitud}
+                    onClose={onClose}
+                    onGestionar={onGestionar}
+                />
                 <ModalTabs active={activeTab} onChange={setActiveTab} />
                 <div className="flex-1 overflow-auto min-h-0 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-                    {activeTab === "campos" && <ResumenSolicitud solicitud={solicitud} />}
-                    {activeTab === "motor_json" && <MotorJsonView solicitud={solicitud} hideExpand />}
+                    {activeTab === "documentos" ? (
+                        <DocumentosTab
+                            cedula={solicitud.cedula}
+                            solicitante={solicitud.solicitante}
+                            radicado={solicitud.radicado}
+                            showHeader={false}
+                        />
+                    ) : detail ? (
+                        <>
+                            {activeTab === "campos"     && <ResumenSolicitud solicitud={detail} />}
+                            {activeTab === "motor_json" && <MotorJsonView    solicitud={detail} hideExpand />}
+                        </>
+                    ) : (
+                        <LoadingScreen message="Cargando detalle…" fullScreen={false} />
+                    )}
                 </div>
-
-                {!solicitud.gestionado && onGestionar ? (
-                    <div className="flex-shrink-0 border-t border-[#0D0D0D]/10 p-3">
-                        <button
-                            onClick={onGestionar}
-                            className="w-full h-9 bg-[#012340] hover:bg-[#012340]/90 text-white text-[11px] font-semibold tracking-wide transition-colors"
-                        >
-                            Marcar como Gestionado
-                        </button>
-                    </div>
-                ) : solicitud.gestionado ? (
-                    <div className="flex-shrink-0 border-t border-[#0D0D0D]/10 px-4 py-3 flex items-center gap-2">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-                        <span className="text-[11px] text-[#0D0D0D]/45 font-medium">Solicitud gestionada</span>
-                        {solicitud.gestionadoAt && (
-                            <span className="text-[11px] text-[#0D0D0D]/35 ml-auto">
-                                {new Date(solicitud.gestionadoAt).toLocaleDateString("es-CO")}
-                            </span>
-                        )}
-                    </div>
-                ) : null}
             </div>
         </div>
     );

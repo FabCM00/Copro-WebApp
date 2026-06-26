@@ -92,6 +92,13 @@ export function UserMenu() {
                             Cerrar sesión
                         </button>
                     </div>
+
+                    {/* Pie de marca */}
+                    <div className="border-t border-[#0D0D0D]/8 px-4 py-2.5 text-center">
+                        <p className="text-[10px] font-bold tracking-[0.16em] uppercase text-[#012340]/40">
+                            Cooperativa COPRODIGITAL
+                        </p>
+                    </div>
                 </div>
             )}
         </div>

@@ -36,6 +36,9 @@ export interface CoproResponses {
   mdResp: Dict;
   mpResp: Dict;
   idResp: Dict;
+  hasIdentity: boolean;
+  hasMotorData: boolean;
+  hasMotorProcess: boolean;
 }
 
 function detalladoWant(r: CoproResponses): Dict {
@@ -111,36 +114,34 @@ export function extractMonto(r: CoproResponses): number {
 }
 
 export function deriveEstado(r: CoproResponses): SolicitudEstado {
-  const decNum = asNum(r.mpResp.decision_final_num);
-  if (decNum === 1) return "aprobado";
-  if (decNum === 2) return "no_viable";
+  const valida1 = asNum(r.v1Resp.valida_1);
 
-  const decTxt = asStr(r.mpResp.decision_final).toLowerCase();
-  if (decTxt) {
-    if (
-      decTxt.includes("no cumple") ||
-      decTxt.includes("no viable") ||
-      decTxt.includes("rechaz")
-    )
-      return "no_viable";
-    if (
-      decTxt.includes("cumple") ||
-      decTxt.includes("aprob") ||
-      decTxt.includes("viable")
-    )
-      return "aprobado";
-    return "en_revision";
+  if (!r.hasIdentity) {
+    return valida1 === 1 ? "valida_1" : "no_valida_1";
   }
 
-  const esApto = r.v1Resp.es_apto;
-  if (esApto === true) return "en_revision";
-  if (esApto === false) return "rechazado";
+  if (!r.hasMotorData) {
+    const sf = r.idResp.status_face;
+    const sd = r.idResp.status_document;
+    const tv = asNum(r.idResp.tipo_validacion);
+    const faceOk = sf === 1 || asStr(sf).toLowerCase() === "success";
+    const docOk  = sd === 1 || asStr(sd).toLowerCase() === "success";
+    const faceFail = sf === 2 || asStr(sf).toLowerCase() === "failed";
+    const docFail  = sd === 2 || asStr(sd).toLowerCase() === "failed";
+    if (faceOk && ((tv === 1 && docOk) || tv === 2)) return "val_identidad";
+    if (faceFail || docFail) return "no_val_identidad";
+  }
 
-  const valida1 = asNum(r.v1Resp.valida_1);
-  if (valida1 === 1) return "en_revision";
-  if (valida1 === 2) return "rechazado";
+  if (r.hasMotorProcess) {
+    const st = asStr(r.mpResp.status).toLowerCase();
+    if (st && st !== "ok") return "fallo_servicios";
+  }
 
-  return "pendiente";
+  const decNum = asNum(r.mpResp.decision_final_num);
+  if (decNum === 2) return "no_viable";
+  if (decNum === 1) return "aprobado";
+
+  return "revision";
 }
 
 export function decisionTexto(r: CoproResponses): string {
@@ -149,7 +150,7 @@ export function decisionTexto(r: CoproResponses): string {
 
   const esApto = r.v1Resp.es_apto;
   if (esApto === false) return "No apto en validación inicial";
-  if (esApto === true) return "Apto — pendiente de motor";
+  if (esApto === true) return "Pendiente de motor";
 
   return "Pendiente de validación";
 }
@@ -235,6 +236,9 @@ export function buildResponses(args: {
   mdResp?: unknown;
   mpResp?: unknown;
   idResp?: unknown;
+  hasIdentity?: boolean;
+  hasMotorData?: boolean;
+  hasMotorProcess?: boolean;
 }): CoproResponses {
   return {
     v1Resp: asObj(args.v1Resp),
@@ -242,5 +246,8 @@ export function buildResponses(args: {
     mdResp: asObj(args.mdResp),
     mpResp: asObj(args.mpResp),
     idResp: asObj(args.idResp),
+    hasIdentity: args.hasIdentity ?? args.idResp != null,
+    hasMotorData: args.hasMotorData ?? args.mdResp != null,
+    hasMotorProcess: args.hasMotorProcess ?? args.mpResp != null,
   };
 }

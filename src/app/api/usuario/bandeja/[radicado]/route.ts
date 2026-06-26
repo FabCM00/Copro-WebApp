@@ -11,6 +11,7 @@ import {
   parseFecha,
   buildValidaciones,
 } from "@/lib/coprocenva-derive";
+import { withPrismaRetry } from "@/lib/prisma-retry";
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ radicado: string }> },
@@ -26,15 +27,17 @@ export async function GET(
   const { radicado } = await params;
 
   try {
-    const v1 = await prisma.valida1Results.findUnique({
-      where: { radicado },
-      include: {
-        motorProcess: true,
-        motorData: true,
-        identity: true,
-        coprocenvaEnvios: true,
-      },
-    });
+    const v1 = await withPrismaRetry(() =>
+      prisma.valida1Results.findUnique({
+        where: { radicado },
+        include: {
+          motorProcess: true,
+          motorData: true,
+          identity: true,
+          coprocenvaEnvios: true,
+        },
+      }),
+    );
 
     if (!v1) {
       return NextResponse.json(
@@ -50,10 +53,13 @@ export async function GET(
 
     const r = buildResponses({
       v1Resp: v1.responseJson,
-      v1Req: v1.requestJson,
+      v1Req:  v1.requestJson,
       mdResp: md?.responseJson,
       mpResp: motor?.responseJson,
       idResp: iv?.responseJson,
+      hasIdentity:    !!iv,
+      hasMotorData:   !!md,
+      hasMotorProcess: !!motor,
     });
 
     const data = {
@@ -82,35 +88,35 @@ export async function GET(
         },
         motor_process: motor
           ? {
-              radicado: motor.radicado,
-              cedula: motor.cedula,
-              request_json: motor.requestJson ?? null,
-              response_json: motor.responseJson ?? null,
-            }
+            radicado: motor.radicado,
+            cedula: motor.cedula,
+            request_json: motor.requestJson ?? null,
+            response_json: motor.responseJson ?? null,
+          }
           : null,
         motor_data: md
           ? {
-              radicado: md.radicado,
-              cedula: md.cedula,
-              request_json: md.requestJson ?? null,
-              response_json: md.responseJson ?? null,
-            }
+            radicado: md.radicado,
+            cedula: md.cedula,
+            request_json: md.requestJson ?? null,
+            response_json: md.responseJson ?? null,
+          }
           : null,
         identity: iv
           ? {
-              radicado: iv.radicado,
-              cedula: iv.cedula,
-              request_json: iv.requestJson ?? null,
-              response_json: iv.responseJson ?? null,
-            }
+            radicado: iv.radicado,
+            cedula: iv.cedula,
+            request_json: iv.requestJson ?? null,
+            response_json: iv.responseJson ?? null,
+          }
           : null,
         coprocenva_envios: env
           ? {
-              radicado: env.radicado,
-              cedula: env.cedula,
-              request_json: env.requestJson ?? null,
-              response_json: env.responseJson ?? null,
-            }
+            radicado: env.radicado,
+            cedula: env.cedula,
+            request_json: env.requestJson ?? null,
+            response_json: env.responseJson ?? null,
+          }
           : null,
         credito_decision: null,
       },

@@ -12,7 +12,6 @@ import {
   Cpu,
   ShieldCheck,
   FileJson,
-  ClipboardList,
   Send,
   ChevronDown,
 } from "lucide-react";
@@ -22,7 +21,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-// ─── Helpers de acceso/formato ────────────────────────────────────────────────
 
 type Dict = Record<string, unknown>;
 
@@ -74,7 +72,6 @@ function fmtFecha(v: string | number | null | undefined): string {
   return s;
 }
 
-// ─── Componentes de sección (idénticos a la versión Fondex) ───────────────────
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -106,13 +103,12 @@ function InfoRow({
     <div className="flex items-center justify-between gap-6 px-4 py-2.5">
       <span className="text-xs text-[#0D0D0D]/45 flex-shrink-0">{label}</span>
       <span
-        className={`text-xs text-right break-all leading-relaxed ${
-          highlight
+        className={`text-xs text-right break-all leading-relaxed ${highlight
             ? "font-bold text-[#012340]"
             : mono
               ? "font-mono text-[#0D0D0D]/65"
               : "font-medium text-[#0D0D0D]/80"
-        }`}
+          }`}
       >
         {value}
       </span>
@@ -182,8 +178,6 @@ function CriteriaSummary({ values }: { values: (1 | 2 | null)[] }) {
   );
 }
 
-// ─── Resumen principal — campos reales de Coprocenva ──────────────────────────
-
 export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
   const raw = solicitud.raw;
   if (!raw) {
@@ -212,27 +206,14 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
 
   const celular = fmtVal(
     (v1Resp.celular_chat as string) ??
-      (v1Resp.celular_copro as string) ??
-      (da.celular as string) ??
-      (v1Req.celular as string),
+    (v1Resp.celular_copro as string) ??
+    (da.celular as string) ??
+    (v1Req.celular as string),
   );
   const email = fmtVal((da.email as string) ?? (v1Req.email as string));
 
   return (
     <div className="p-4 flex flex-col gap-5">
-      {/* Alerta sin motor */}
-      {solicitud.sinMotor && (
-        <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 px-3 py-3 text-xs text-amber-800">
-          <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5 text-amber-500" />
-          <span>
-            Solicitud sin resultado de{" "}
-            <span className="font-mono font-semibold">motor_process</span>. Solo
-            se muestran datos de la validación inicial.
-          </span>
-        </div>
-      )}
-
-      {/* ── Solicitante ──────────────────────────────────────── */}
       <Section title="Solicitante">
         <InfoRow label="Nombre" value={solicitud.solicitante} highlight />
         <InfoRow label="Cédula" value={solicitud.cedula} mono />
@@ -273,7 +254,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
         <InfoRow label="Fecha solicitud" value={solicitud.fecha} />
       </Section>
 
-      {/* ── Solicitud / Oferta ────────────────────────────────── */}
       <Section title="Solicitud">
         <InfoRow
           label="Monto solicitado"
@@ -321,7 +301,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
         )}
       </Section>
 
-      {/* ── Análisis del motor ────────────────────────────────── */}
       {Object.keys(mpResp).length > 0 && (
         <Section title="Análisis del motor">
           <InfoRow
@@ -375,7 +354,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
         </Section>
       )}
 
-      {/* ── Scoring ───────────────────────────────────────────── */}
       {(det.score_expe != null || det.score_trans != null) && (
         <Section title="Scoring (Centrales de riesgo)">
           <InfoRow
@@ -399,7 +377,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
         </Section>
       )}
 
-      {/* ── Valida 1 — Criterios del cliente ─────────────────── */}
       <Section title="Valida 1 — Criterios del cliente">
         <CriteriaSummary
           values={[
@@ -443,7 +420,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
         />
       </Section>
 
-      {/* ── Identidad — Validación documental y facial ───────── */}
       <Section title="Identidad — Validación documental y facial">
         {Object.keys(idResp).length > 0 ? (
           <>
@@ -483,7 +459,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
         )}
       </Section>
 
-      {/* ── Motor de crédito — Política ───────────────────────── */}
       <Section title="Motor de crédito — Política de crédito">
         {Object.keys(mpResp).length > 0 ? (
           <>
@@ -529,7 +504,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
         )}
       </Section>
 
-      {/* ── Envío a Coprocenva ────────────────────────────────── */}
       <Section title="Envío a Coprocenva">
         {raw.coprocenva_envios ? (
           <>
@@ -567,7 +541,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
         )}
       </Section>
 
-      {/* ── Motivos no apto ───────────────────────────────────── */}
       {(motivosNoApto.length > 0 || v1Resp.es_apto === false) && (
         <Section title="Motivos no apto">
           {motivosNoApto.length > 0 ? (
@@ -593,7 +566,6 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
   );
 }
 
-// ─── Vista JSON — Monaco Editor ───────────────────────────────────────────────
 
 export function JsonView({ data }: { data: unknown }) {
   const formatted = useMemo(() => {
@@ -648,15 +620,13 @@ export function JsonView({ data }: { data: unknown }) {
   );
 }
 
-// ─── Vista multi-panel del JSON completo ──────────────────────────────────────
 
 type MotorJsonPanel =
   | "valida1"
   | "motor_data"
   | "motor_process"
   | "identity"
-  | "coprocenva_envios"
-  | "auditoria";
+  | "coprocenva_envios";
 
 const MOTOR_JSON_PANELS: {
   id: MotorJsonPanel;
@@ -664,101 +634,37 @@ const MOTOR_JSON_PANELS: {
   icon: React.ReactNode;
   hasReqRes: boolean;
 }[] = [
-  {
-    id: "valida1",
-    shortLabel: "Validación",
-    icon: <ShieldCheck className="h-3.5 w-3.5" />,
-    hasReqRes: true,
-  },
-  {
-    id: "motor_data",
-    shortLabel: "Motor Data",
-    icon: <Database className="h-3.5 w-3.5" />,
-    hasReqRes: true,
-  },
-  {
-    id: "motor_process",
-    shortLabel: "Motor Process",
-    icon: <Cpu className="h-3.5 w-3.5" />,
-    hasReqRes: true,
-  },
-  {
-    id: "identity",
-    shortLabel: "Identidad",
-    icon: <FileJson className="h-3.5 w-3.5" />,
-    hasReqRes: true,
-  },
-  {
-    id: "coprocenva_envios",
-    shortLabel: "Envío Coprocenva",
-    icon: <Send className="h-3.5 w-3.5" />,
-    hasReqRes: true,
-  },
-  {
-    id: "auditoria",
-    shortLabel: "Auditoría",
-    icon: <ClipboardList className="h-3.5 w-3.5" />,
-    hasReqRes: false,
-  },
-];
-
-function buildAuditoriaResumen(
-  solicitud: SolicitudUI,
-): Record<string, unknown> {
-  const raw = solicitud.raw;
-  const v1Resp = asObj(raw?.valida1?.response_json);
-  const mpResp = asObj(raw?.motor_process?.response_json);
-  const envResp = asObj(raw?.coprocenva_envios?.response_json);
-  return {
-    meta: {
-      radicado: solicitud.radicado,
-      cedula: solicitud.cedula,
-      solicitante: solicitud.solicitante,
-      fecha_solicitud: solicitud.fecha,
+    {
+      id: "valida1",
+      shortLabel: "Validación",
+      icon: <ShieldCheck className="h-3.5 w-3.5" />,
+      hasReqRes: true,
     },
-    decision: {
-      estado: solicitud.estado,
-      decision_texto: solicitud.decisionTexto,
-      decision_final: mpResp.decision_final ?? null,
-      decision_final_num: mpResp.decision_final_num ?? null,
-      sin_motor: solicitud.sinMotor,
-      score: solicitud.score,
+    {
+      id: "motor_data",
+      shortLabel: "Motor Data",
+      icon: <Database className="h-3.5 w-3.5" />,
+      hasReqRes: true,
     },
-    solicitud: {
-      valor: solicitud.valor,
-      neto_final: mpResp.neto_final ?? null,
-      plazo_meses: mpResp.plazo_meses ?? null,
+    {
+      id: "motor_process",
+      shortLabel: "Motor Process",
+      icon: <Cpu className="h-3.5 w-3.5" />,
+      hasReqRes: true,
     },
-    validaciones_iniciales: {
-      es_apto: v1Resp.es_apto ?? null,
-      valida_1: v1Resp.valida_1 ?? null,
-      valida_id: v1Resp.valida_id ?? null,
-      valida_edad: v1Resp.valida_edad ?? null,
-      valida_celular: v1Resp.valida_celular ?? null,
-      valida_mora_12m: v1Resp.valida_mora_12m ?? null,
-      motivos_no_apto: v1Resp.motivos_no_apto ?? [],
+    {
+      id: "identity",
+      shortLabel: "Identidad",
+      icon: <FileJson className="h-3.5 w-3.5" />,
+      hasReqRes: true,
     },
-    criterios_motor: Object.keys(mpResp).length
-      ? {
-          cumple_solvencia: mpResp.cumple_solvencia ?? null,
-          cumple_capacidad_pago: mpResp.cumple_capacidad_pago ?? null,
-          cumple_continuidad: mpResp.cumple_continuidad ?? null,
-          cumple_mora_ext_12m: mpResp.cumple_mora_ext_12m ?? null,
-          cumple_ingreso_total: mpResp.cumple_ingreso_total ?? null,
-          cumple_score_minimo: mpResp.cumple_score_minimo ?? null,
-          solvencia: mpResp.solvencia ?? null,
-          capacidad_de_pago: mpResp.capacidad_de_pago ?? null,
-        }
-      : null,
-    envio_coprocenva: raw?.coprocenva_envios
-      ? {
-          envio_ok: envResp.envio_ok ?? null,
-          status_coprocenva: envResp.status_coprocenva ?? null,
-          error: envResp.error ?? null,
-        }
-      : null,
-  };
-}
+    {
+      id: "coprocenva_envios",
+      shortLabel: "Envío Coprocenva",
+      icon: <Send className="h-3.5 w-3.5" />,
+      hasReqRes: true,
+    },
+  ];
 
 type ReqResSide = "req" | "res";
 
@@ -800,8 +706,6 @@ export function MotorJsonView({
         return side === "req"
           ? (raw?.coprocenva_envios?.request_json ?? null)
           : (raw?.coprocenva_envios?.response_json ?? null);
-      case "auditoria":
-        return buildAuditoriaResumen(solicitud);
     }
   };
 
@@ -814,7 +718,6 @@ export function MotorJsonView({
         <div className="flex min-w-max">
           {MOTOR_JSON_PANELS.map((panel) => {
             const isActive = activePanel === panel.id;
-            const isAudit = panel.id === "auditoria";
             const side = getSide(panel.id);
             const hasData = getPanelData(panel.id, side) != null;
 
@@ -824,11 +727,10 @@ export function MotorJsonView({
                 <button
                   key={panel.id}
                   onClick={() => setActivePanel(panel.id)}
-                  className={`relative flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-semibold whitespace-nowrap transition-colors border-r border-slate-200 last:border-r-0 ${
-                    isActive
+                  className={`relative flex items-center gap-1.5 px-4 py-2.5 text-[11px] font-semibold whitespace-nowrap transition-colors border-r border-slate-200 last:border-r-0 ${isActive
                       ? "bg-white text-[#012340]"
                       : "text-slate-400 hover:text-slate-600 hover:bg-white/70"
-                  }`}
+                    }`}
                 >
                   <span className="flex-shrink-0 text-emerald-600 transition-colors">
                     {panel.icon}
@@ -850,11 +752,10 @@ export function MotorJsonView({
                 <PopoverTrigger asChild>
                   <button
                     onClick={() => setActivePanel(panel.id)}
-                    className={`group relative flex items-center gap-1.5 pl-4 pr-2.5 py-2.5 text-[11px] font-semibold whitespace-nowrap transition-colors border-r border-slate-200 last:border-r-0 ${
-                      isActive
+                    className={`group relative flex items-center gap-1.5 pl-4 pr-2.5 py-2.5 text-[11px] font-semibold whitespace-nowrap transition-colors border-r border-slate-200 last:border-r-0 ${isActive
                         ? "bg-white text-[#012340]"
                         : "text-slate-400 hover:text-slate-600 hover:bg-white/70"
-                    }`}
+                      }`}
                   >
                     <span
                       className={`flex-shrink-0 transition-colors ${isActive ? "text-[#012340]" : "text-slate-300"}`}
@@ -900,11 +801,10 @@ export function MotorJsonView({
                               [panel.id]: s,
                             }));
                           }}
-                          className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm transition-colors ${
-                            isCurrent
+                          className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm transition-colors ${isCurrent
                               ? "bg-[#012340]/8 text-[#012340]"
                               : "text-[#0D0D0D]/35 hover:text-[#012340]/60"
-                          }`}
+                            }`}
                         >
                           {s === "req" ? "Req" : "Res"}
                         </button>

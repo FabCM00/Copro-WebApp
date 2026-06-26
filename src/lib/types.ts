@@ -1,10 +1,12 @@
 export type SolicitudEstado =
+  | "valida_1"
+  | "no_valida_1"
+  | "val_identidad"
+  | "no_val_identidad"
+  | "fallo_servicios"
+  | "no_viable"
   | "aprobado"
-  | "preaprobado"
-  | "en_revision"
-  | "pendiente"
-  | "rechazado"
-  | "no_viable";
+  | "revision";
 
 export interface ValidacionItem {
   label: string;
