@@ -1,7 +1,1 @@
-{
-  "/api/usuario/bandeja/route": "app/api/usuario/bandeja/route.js",
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/page": "app/page.js",
-  "/(protected)/usuario/perfil/page": "app/(protected)/usuario/perfil/page.js",
-  "/(protected)/usuario/bandeja/page": "app/(protected)/usuario/bandeja/page.js"
-}
+{}
