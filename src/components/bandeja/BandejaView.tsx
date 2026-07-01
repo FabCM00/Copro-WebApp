@@ -420,7 +420,7 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                                                         {s.solicitante}
                                                     </span>
                                                 </div>
-                                                <span className="text-[10px] text-[#0D0D0D]/35 flex-shrink-0">
+                                                <span className="text-[10px] text-[#0D0D0D] flex-shrink-0">
                                                     {formatFechaCorta(s.fecha)}
                                                 </span>
                                             </div>
@@ -561,8 +561,18 @@ function formatCurrency(v: number): string {
 
 function formatFechaCorta(iso: string): string {
     if (!iso) return "—";
-    const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return iso;
-    const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-    return `${parseInt(m[3])} ${meses[parseInt(m[2]) - 1]}`;
+    // Fecha sin hora: no pasa por conversión de zona horaria (un día calendario
+    // no tiene huso horario propio; convertirlo podría retroceder al día anterior).
+    const soloFecha = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (soloFecha) return `${soloFecha[3]}/${soloFecha[2]}/${soloFecha[1]}`;
+
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Bogota",
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(d);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+    return `${get("day")}/${get("month")}/${get("year")} ${get("hour")}:${get("minute")}`;
 }

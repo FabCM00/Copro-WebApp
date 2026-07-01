@@ -72,6 +72,22 @@ function fmtFecha(v: string | number | null | undefined): string {
   return s;
 }
 
+function fmtFechaHora(v: string | null | undefined): string {
+  if (!v) return "—";
+  const soloFecha = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (soloFecha) return `${soloFecha[3]}/${soloFecha[2]}/${soloFecha[1]}`;
+
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return v;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return `${get("day")}/${get("month")}/${get("year")} ${get("hour")}:${get("minute")}`;
+}
+
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -251,7 +267,7 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
           label="Fecha ingreso coop."
           value={fmtFecha(v1Resp.fecha_ingreso_coop as string)}
         />
-        <InfoRow label="Fecha solicitud" value={solicitud.fecha} />
+        <InfoRow label="Fecha solicitud" value={fmtFechaHora(solicitud.fecha)} />
       </Section>
 
       <Section title="Solicitud">

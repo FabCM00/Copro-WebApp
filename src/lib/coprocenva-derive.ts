@@ -155,12 +155,17 @@ export function decisionTexto(r: CoproResponses): string {
   return "Pendiente de validación";
 }
 
+// El timestamp embebido en el radicado y `createdAt` están en UTC; se marca
+// explícitamente con "Z" para que cualquier `new Date(...)` lo interprete
+// como UTC en vez de como hora local del navegador/servidor.
 export function parseFecha(radicado: string, fallback: string): string {
   const ts = radicado.split("_")[1] ?? "";
   if (ts.length >= 6 && !isNaN(Number(ts.slice(0, 6)))) {
-    return `20${ts.slice(4, 6)}-${ts.slice(2, 4)}-${ts.slice(0, 2)}`;
+    const fecha = `20${ts.slice(0, 2)}-${ts.slice(2, 4)}-${ts.slice(4, 6)}`;
+    const hora = ts.length >= 12 ? `T${ts.slice(6, 8)}:${ts.slice(8, 10)}:${ts.slice(10, 12)}Z` : "";
+    return `${fecha}${hora}`;
   }
-  return fallback.slice(0, 10);
+  return fallback.slice(0, 19) + "Z";
 }
 
 function norm12(v: unknown): 1 | 2 | null {

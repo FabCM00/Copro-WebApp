@@ -1,1 +1,7 @@
-{}
+{
+  "/api/usuario/bandeja/route": "app/api/usuario/bandeja/route.js",
+  "/api/usuario/bandeja/[radicado]/route": "app/api/usuario/bandeja/[radicado]/route.js",
+  "/login/page": "app/login/page.js",
+  "/(protected)/usuario/bandeja/page": "app/(protected)/usuario/bandeja/page.js",
+  "/(protected)/usuario/perfil/page": "app/(protected)/usuario/perfil/page.js"
+}
