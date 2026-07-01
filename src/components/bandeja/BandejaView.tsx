@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-    Search, RefreshCw, Download, Inbox, Maximize2,
+    Search, RefreshCw, Download, Maximize2,
     PanelLeftClose, PanelLeft, SlidersHorizontal,
     MoreVertical, CheckCircle2, X,
 } from "lucide-react";
@@ -396,9 +396,9 @@ export function BandejaView({ mode, cedulaFilter }: BandejaViewProps) {
                                     ))}
                                 </div>
                             ) : pageRows.length === 0 ? (
-                                <div className="py-16 px-4 text-center flex flex-col items-center gap-3">
-                                    <Inbox className="h-6 w-6 text-[#0D0D0D]/20" />
-                                    <p className="text-sm font-semibold text-[#0D0D0D]/50">Sin resultados</p>
+                                <div className="py-12 px-4 text-center flex flex-col items-center gap-2">
+                                    <Image src="/bandeja2.png" alt="" width={112} height={112} className="h-28 w-28 object-contain" />
+                                    <p className="text-sm font-semibold text-[#0D0D0D]/60">Sin resultados</p>
                                     <p className="text-[11px] text-[#0D0D0D]/35">Intenta con otro filtro o búsqueda</p>
                                 </div>
                             ) : (
