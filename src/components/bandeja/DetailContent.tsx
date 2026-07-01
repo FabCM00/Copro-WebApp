@@ -303,6 +303,10 @@ export function ResumenSolicitud({ solicitud }: { solicitud: SolicitudUI }) {
 
       {Object.keys(mpResp).length > 0 && (
         <Section title="Análisis del motor">
+            <InfoRow
+            label="Agencia de Desembolso"
+            value={fmtVal(det.agencia_desembolso as string | number)}
+          />
           <InfoRow
             label="Ingreso total"
             value={fmtMoneda(det.ingreso_total as number)}
